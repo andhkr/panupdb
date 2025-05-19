@@ -1,0 +1,3153 @@
+Grammar
+
+    0 $accept: query $end
+
+    1 query: ε
+    2      | query sql_statement
+
+    3 sql_statement: select_statement ';'
+    4              | insert_statement ';'
+    5              | update_statement
+    6              | delete_statement
+    7              | create_statement ';'
+    8              | drop_table ';'
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+   10 select_list: select_item
+   11            | select_list ',' select_item
+
+   12 select_item: expression
+   13            | expression AS IDENTIFIER
+   14            | expression IDENTIFIER
+
+   15 table_reference_list: table_reference
+
+   16 table_reference: table_name
+   17                | table_name IDENTIFIER
+   18                | table_name AS IDENTIFIER
+   19                | table_reference join_type JOIN table_reference ON search_condition
+
+   20 table_name: IDENTIFIER
+
+   21 join_type: ε
+   22          | INNER
+   23          | LEFT OUTER
+   24          | RIGHT OUTER
+   25          | FULL OUTER
+   26          | LEFT
+   27          | RIGHT
+   28          | FULL
+
+   29 where_clause_opt: ε
+   30                 | WHERE search_condition
+
+   31 group_by_clause_opt: ε
+   32                    | GROUP BY column_reference_list
+
+   33 column_reference_list: column_reference
+   34                      | column_reference_list ',' column_reference
+
+   35 column_reference: IDENTIFIER
+   36                 | table_name '.' IDENTIFIER
+
+   37 having_clause_opt: ε
+   38                  | HAVING search_condition
+
+   39 order_by_clause_opt: ε
+   40                    | ORDER BY order_by_list
+
+   41 order_by_list: order_by_item
+   42              | order_by_list ',' order_by_item
+
+   43 order_by_item: expression
+   44              | expression ASC
+   45              | expression DESC
+
+   46 limit_clause_opt: ε
+   47                 | LIMIT expression
+
+   48 offset_clause_opt: ε
+   49                  | OFFSET expression
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list ')'
+
+   51 insert_columns_clause: ε
+   52                      | '(' column_reference_list ')'
+
+   53 insert_values_list: expression
+   54                   | insert_values_list ',' expression
+
+   55 update_statement: UPDATE table_name SET update_list where_clause_opt
+
+   56 update_list: update_item
+   57            | update_list ',' update_item
+
+   58 update_item: column_reference '=' expression
+
+   59 delete_statement: DELETE FROM table_name where_clause_opt
+
+   60 create_statement: CREATE TABLE table_name '(' column_definition_list ')'
+
+   61 column_definition_list: column_definition
+   62                       | column_definition_list ',' column_definition
+
+   63 column_definition: IDENTIFIER data_type column_constraint_list_opt
+
+   64 data_type: INT
+   65          | CHAR '(' INTEGER_LITERAL ')'
+   66          | VARCHAR '(' INTEGER_LITERAL ')'
+   67          | NUMBER
+   68          | DATE
+   69          | TEXT
+
+   70 column_constraint_list_opt: ε
+   71                           | column_constraint_list
+
+   72 column_constraint_list: column_constraint
+   73                       | column_constraint_list column_constraint
+
+   74 column_constraint: NOT SQLNULL
+   75                  | SQLNULL
+   76                  | PRIMARY KEY
+   77                  | UNIQUE
+   78                  | DEFAULT default_value
+   79                  | FOREIGN KEY REFERENCES table_name '(' IDENTIFIER ')'
+
+   80 default_value: INTEGER_LITERAL
+   81              | STRING_LITERAL
+
+   82 drop_table: DROP table_name
+
+   83 search_condition: search_condition OR search_condition
+   84                 | search_condition AND search_condition
+   85                 | NOT search_condition
+   86                 | '(' search_condition ')'
+   87                 | predicate
+
+   88 predicate: comparison_predicate
+   89          | between_predicate
+   90          | in_predicate
+   91          | like_predicate
+   92          | null_predicate
+   93          | exists_predicate
+
+   94 comparison_predicate: expression '=' expression
+   95                     | expression '<' expression
+   96                     | expression '>' expression
+   97                     | expression LE expression
+   98                     | expression GE expression
+   99                     | expression NE expression
+
+  100 between_predicate: expression BETWEEN expression AND expression
+  101                  | expression NOT BETWEEN expression AND expression
+
+  102 in_predicate: expression IN '(' expression_list ')'
+  103             | expression NOT IN '(' expression_list ')'
+
+  104 like_predicate: expression LIKE expression
+  105               | expression NOT LIKE expression
+
+  106 null_predicate: expression IS SQLNULL
+  107               | expression IS NOT SQLNULL
+
+  108 exists_predicate: EXISTS '(' select_statement ')'
+
+  109 expression_list: expression
+  110                | expression_list ',' expression
+
+  111 expression: term
+  112           | expression '+' expression
+  113           | expression '-' expression
+  114           | expression '*' expression
+  115           | expression '/' expression
+  116           | '-' expression
+  117           | '(' expression ')'
+  118           | function_call
+
+  119 term: IDENTIFIER
+  120     | table_name '.' IDENTIFIER
+  121     | INTEGER_LITERAL
+  122     | FLOAT_LITERAL
+  123     | STRING_LITERAL
+  124     | '*'
+
+  125 function_call: IDENTIFIER '(' ')'
+  126              | IDENTIFIER '(' function_arg_list ')'
+
+  127 function_arg_list: expression
+  128                  | function_arg_list ',' expression
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '(' (40) 50 52 60 65 66 79 86 102 103 108 117 125 126
+    ')' (41) 50 52 60 65 66 79 86 102 103 108 117 125 126
+    '*' (42) 114 124
+    '+' (43) 112
+    ',' (44) 11 34 42 54 57 62 110 128
+    '-' (45) 113 116
+    '.' (46) 36 120
+    '/' (47) 115
+    ';' (59) 3 4 7 8
+    '<' (60) 95
+    '=' (61) 58 94
+    '>' (62) 96
+    error (256)
+    SELECT (258) 9
+    FROM (259) 9 59
+    WHERE (260) 30
+    GROUP (261) 32
+    BY (262) 32 40
+    HAVING (263) 38
+    ORDER (264) 40
+    ASC (265) 44
+    DESC (266) 45
+    JOIN (267) 19
+    INNER (268) 22
+    OUTER (269) 23 24 25
+    LEFT (270) 23 26
+    RIGHT (271) 24 27
+    FULL (272) 25 28
+    ON (273) 19
+    AS (274) 13 18
+    AND (275) 84 100 101
+    OR (276) 83
+    NOT (277) 74 85 101 103 105 107
+    SQLNULL (278) 74 75 106 107
+    IS (279) 106 107
+    IN (280) 102 103
+    LIKE (281) 104 105
+    BETWEEN (282) 100 101
+    CREATE (283) 60
+    TABLE (284) 60
+    INSERT (285) 50
+    INTO (286) 50
+    VALUES (287) 50
+    UPDATE (288) 55
+    SET (289) 55
+    DELETE (290) 59
+    INT (291) 64
+    CHAR (292) 65
+    VARCHAR (293) 66
+    NUMBER (294) 67
+    DATE (295) 68
+    TEXT (296) 69
+    PRIMARY (297) 76
+    KEY (298) 76 79
+    UNIQUE (299) 77
+    DEFAULT (300) 78
+    REFERENCES (301) 79
+    FOREIGN (302) 79
+    EXISTS (303) 108
+    LIMIT (304) 47
+    OFFSET (305) 49
+    DROP (306) 82
+    LE (307) 97
+    GE (308) 98
+    NE (309) 99
+    IDENTIFIER <str_val> (310) 13 14 17 18 20 35 36 63 79 119 120 125 126
+    STRING_LITERAL <str_val> (311) 81 123
+    INTEGER_LITERAL <int_val> (312) 65 66 80 121
+    FLOAT_LITERAL <float_val> (313) 122
+    UMINUS (314)
+
+
+Nonterminals, with rules where they appear
+
+    $accept (72)
+        on left: 0
+    query (73)
+        on left: 1 2
+        on right: 0 2
+    sql_statement (74)
+        on left: 3 4 5 6 7 8
+        on right: 2
+    select_statement <select_statement_node> (75)
+        on left: 9
+        on right: 3 108
+    select_list <ast_node> (76)
+        on left: 10 11
+        on right: 9 11
+    select_item <ast_node> (77)
+        on left: 12 13 14
+        on right: 10 11
+    table_reference_list <table_ref_list> (78)
+        on left: 15
+        on right: 9
+    table_reference <table_ref_list> (79)
+        on left: 16 17 18 19
+        on right: 15 19
+    table_name <ast_node> (80)
+        on left: 20
+        on right: 16 17 18 36 50 55 59 60 79 82 120
+    join_type (81)
+        on left: 21 22 23 24 25 26 27 28
+        on right: 19
+    where_clause_opt (82)
+        on left: 29 30
+        on right: 9 55 59
+    group_by_clause_opt (83)
+        on left: 31 32
+        on right: 9
+    column_reference_list <ast_node> (84)
+        on left: 33 34
+        on right: 32 34 52
+    column_reference <ast_node> (85)
+        on left: 35 36
+        on right: 33 34 58
+    having_clause_opt (86)
+        on left: 37 38
+        on right: 9
+    order_by_clause_opt (87)
+        on left: 39 40
+        on right: 9
+    order_by_list (88)
+        on left: 41 42
+        on right: 40 42
+    order_by_item (89)
+        on left: 43 44 45
+        on right: 41 42
+    limit_clause_opt (90)
+        on left: 46 47
+        on right: 9
+    offset_clause_opt (91)
+        on left: 48 49
+        on right: 9
+    insert_statement <insert> (92)
+        on left: 50
+        on right: 4
+    insert_columns_clause <ast_node> (93)
+        on left: 51 52
+        on right: 50
+    insert_values_list <ast_node> (94)
+        on left: 53 54
+        on right: 50 54
+    update_statement (95)
+        on left: 55
+        on right: 5
+    update_list (96)
+        on left: 56 57
+        on right: 55 57
+    update_item (97)
+        on left: 58
+        on right: 56 57
+    delete_statement (98)
+        on left: 59
+        on right: 6
+    create_statement <create_tbl> (99)
+        on left: 60
+        on right: 7
+    column_definition_list <colmn_def> (100)
+        on left: 61 62
+        on right: 60 62
+    column_definition <colmn_def> (101)
+        on left: 63
+        on right: 61 62
+    data_type <dtype> (102)
+        on left: 64 65 66 67 68 69
+        on right: 63
+    column_constraint_list_opt <ast_node> (103)
+        on left: 70 71
+        on right: 63
+    column_constraint_list <ast_node> (104)
+        on left: 72 73
+        on right: 71 73
+    column_constraint <ast_node> (105)
+        on left: 74 75 76 77 78 79
+        on right: 72 73
+    default_value <dtype> (106)
+        on left: 80 81
+        on right: 78
+    drop_table <ast_node> (107)
+        on left: 82
+        on right: 8
+    search_condition (108)
+        on left: 83 84 85 86 87
+        on right: 19 30 38 83 84 85 86
+    predicate (109)
+        on left: 88 89 90 91 92 93
+        on right: 87
+    comparison_predicate (110)
+        on left: 94 95 96 97 98 99
+        on right: 88
+    between_predicate (111)
+        on left: 100 101
+        on right: 89
+    in_predicate (112)
+        on left: 102 103
+        on right: 90
+    like_predicate (113)
+        on left: 104 105
+        on right: 91
+    null_predicate (114)
+        on left: 106 107
+        on right: 92
+    exists_predicate (115)
+        on left: 108
+        on right: 93
+    expression_list (116)
+        on left: 109 110
+        on right: 102 103 110
+    expression <ast_node> (117)
+        on left: 111 112 113 114 115 116 117 118
+        on right: 12 13 14 43 44 45 47 49 53 54 58 94 95 96 97 98 99 100 101 102 103 104 105 106 107 109 110 112 113 114 115 116 117 127 128
+    term <ast_node> (118)
+        on left: 119 120 121 122 123 124
+        on right: 111
+    function_call (119)
+        on left: 125 126
+        on right: 118
+    function_arg_list (120)
+        on left: 127 128
+        on right: 126 128
+
+
+State 0
+
+    0 $accept: • query $end
+
+    $default  reduce using rule 1 (query)
+
+    query  go to state 1
+
+
+State 1
+
+    0 $accept: query • $end
+    2 query: query • sql_statement
+
+    $end    shift, and go to state 2
+    SELECT  shift, and go to state 3
+    CREATE  shift, and go to state 4
+    INSERT  shift, and go to state 5
+    UPDATE  shift, and go to state 6
+    DELETE  shift, and go to state 7
+    DROP    shift, and go to state 8
+
+    sql_statement     go to state 9
+    select_statement  go to state 10
+    insert_statement  go to state 11
+    update_statement  go to state 12
+    delete_statement  go to state 13
+    create_statement  go to state 14
+    drop_table        go to state 15
+
+
+State 2
+
+    0 $accept: query $end •
+
+    $default  accept
+
+
+State 3
+
+    9 select_statement: SELECT • select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    select_list    go to state 23
+    select_item    go to state 24
+    table_name     go to state 25
+    expression     go to state 26
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 4
+
+   60 create_statement: CREATE • TABLE table_name '(' column_definition_list ')'
+
+    TABLE  shift, and go to state 29
+
+
+State 5
+
+   50 insert_statement: INSERT • INTO table_name insert_columns_clause VALUES '(' insert_values_list ')'
+
+    INTO  shift, and go to state 30
+
+
+State 6
+
+   55 update_statement: UPDATE • table_name SET update_list where_clause_opt
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 32
+
+
+State 7
+
+   59 delete_statement: DELETE • FROM table_name where_clause_opt
+
+    FROM  shift, and go to state 33
+
+
+State 8
+
+   82 drop_table: DROP • table_name
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 34
+
+
+State 9
+
+    2 query: query sql_statement •
+
+    $default  reduce using rule 2 (query)
+
+
+State 10
+
+    3 sql_statement: select_statement • ';'
+
+    ';'  shift, and go to state 35
+
+
+State 11
+
+    4 sql_statement: insert_statement • ';'
+
+    ';'  shift, and go to state 36
+
+
+State 12
+
+    5 sql_statement: update_statement •
+
+    $default  reduce using rule 5 (sql_statement)
+
+
+State 13
+
+    6 sql_statement: delete_statement •
+
+    $default  reduce using rule 6 (sql_statement)
+
+
+State 14
+
+    7 sql_statement: create_statement • ';'
+
+    ';'  shift, and go to state 37
+
+
+State 15
+
+    8 sql_statement: drop_table • ';'
+
+    ';'  shift, and go to state 38
+
+
+State 16
+
+   20 table_name: IDENTIFIER •
+  119 term: IDENTIFIER •
+  125 function_call: IDENTIFIER • '(' ')'
+  126              | IDENTIFIER • '(' function_arg_list ')'
+
+    '('  shift, and go to state 39
+
+    '.'       reduce using rule 20 (table_name)
+    $default  reduce using rule 119 (term)
+
+
+State 17
+
+  123 term: STRING_LITERAL •
+
+    $default  reduce using rule 123 (term)
+
+
+State 18
+
+  121 term: INTEGER_LITERAL •
+
+    $default  reduce using rule 121 (term)
+
+
+State 19
+
+  122 term: FLOAT_LITERAL •
+
+    $default  reduce using rule 122 (term)
+
+
+State 20
+
+  116 expression: '-' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 40
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 21
+
+  124 term: '*' •
+
+    $default  reduce using rule 124 (term)
+
+
+State 22
+
+  117 expression: '(' • expression ')'
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 41
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 23
+
+    9 select_statement: SELECT select_list • FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+   11 select_list: select_list • ',' select_item
+
+    FROM  shift, and go to state 42
+    ','   shift, and go to state 43
+
+
+State 24
+
+   10 select_list: select_item •
+
+    $default  reduce using rule 10 (select_list)
+
+
+State 25
+
+  120 term: table_name • '.' IDENTIFIER
+
+    '.'  shift, and go to state 44
+
+
+State 26
+
+   12 select_item: expression •
+   13            | expression • AS IDENTIFIER
+   14            | expression • IDENTIFIER
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    AS          shift, and go to state 45
+    IDENTIFIER  shift, and go to state 46
+    '+'         shift, and go to state 47
+    '-'         shift, and go to state 48
+    '*'         shift, and go to state 49
+    '/'         shift, and go to state 50
+
+    $default  reduce using rule 12 (select_item)
+
+
+State 27
+
+  111 expression: term •
+
+    $default  reduce using rule 111 (expression)
+
+
+State 28
+
+  118 expression: function_call •
+
+    $default  reduce using rule 118 (expression)
+
+
+State 29
+
+   60 create_statement: CREATE TABLE • table_name '(' column_definition_list ')'
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 51
+
+
+State 30
+
+   50 insert_statement: INSERT INTO • table_name insert_columns_clause VALUES '(' insert_values_list ')'
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 52
+
+
+State 31
+
+   20 table_name: IDENTIFIER •
+
+    $default  reduce using rule 20 (table_name)
+
+
+State 32
+
+   55 update_statement: UPDATE table_name • SET update_list where_clause_opt
+
+    SET  shift, and go to state 53
+
+
+State 33
+
+   59 delete_statement: DELETE FROM • table_name where_clause_opt
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 54
+
+
+State 34
+
+   82 drop_table: DROP table_name •
+
+    $default  reduce using rule 82 (drop_table)
+
+
+State 35
+
+    3 sql_statement: select_statement ';' •
+
+    $default  reduce using rule 3 (sql_statement)
+
+
+State 36
+
+    4 sql_statement: insert_statement ';' •
+
+    $default  reduce using rule 4 (sql_statement)
+
+
+State 37
+
+    7 sql_statement: create_statement ';' •
+
+    $default  reduce using rule 7 (sql_statement)
+
+
+State 38
+
+    8 sql_statement: drop_table ';' •
+
+    $default  reduce using rule 8 (sql_statement)
+
+
+State 39
+
+  125 function_call: IDENTIFIER '(' • ')'
+  126              | IDENTIFIER '(' • function_arg_list ')'
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+    ')'              shift, and go to state 55
+
+    table_name         go to state 25
+    expression         go to state 56
+    term               go to state 27
+    function_call      go to state 28
+    function_arg_list  go to state 57
+
+
+State 40
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  116           | '-' expression •
+
+    $default  reduce using rule 116 (expression)
+
+
+State 41
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  117           | '(' expression • ')'
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+    ')'  shift, and go to state 58
+
+
+State 42
+
+    9 select_statement: SELECT select_list FROM • table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_reference_list  go to state 59
+    table_reference       go to state 60
+    table_name            go to state 61
+
+
+State 43
+
+   11 select_list: select_list ',' • select_item
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    select_item    go to state 62
+    table_name     go to state 25
+    expression     go to state 26
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 44
+
+  120 term: table_name '.' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 63
+
+
+State 45
+
+   13 select_item: expression AS • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 64
+
+
+State 46
+
+   14 select_item: expression IDENTIFIER •
+
+    $default  reduce using rule 14 (select_item)
+
+
+State 47
+
+  112 expression: expression '+' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 65
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 48
+
+  113 expression: expression '-' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 66
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 49
+
+  114 expression: expression '*' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 67
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 50
+
+  115 expression: expression '/' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 68
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 51
+
+   60 create_statement: CREATE TABLE table_name • '(' column_definition_list ')'
+
+    '('  shift, and go to state 69
+
+
+State 52
+
+   50 insert_statement: INSERT INTO table_name • insert_columns_clause VALUES '(' insert_values_list ')'
+
+    '('  shift, and go to state 70
+
+    $default  reduce using rule 51 (insert_columns_clause)
+
+    insert_columns_clause  go to state 71
+
+
+State 53
+
+   55 update_statement: UPDATE table_name SET • update_list where_clause_opt
+
+    IDENTIFIER  shift, and go to state 72
+
+    table_name        go to state 73
+    column_reference  go to state 74
+    update_list       go to state 75
+    update_item       go to state 76
+
+
+State 54
+
+   59 delete_statement: DELETE FROM table_name • where_clause_opt
+
+    WHERE  shift, and go to state 77
+
+    $default  reduce using rule 29 (where_clause_opt)
+
+    where_clause_opt  go to state 78
+
+
+State 55
+
+  125 function_call: IDENTIFIER '(' ')' •
+
+    $default  reduce using rule 125 (function_call)
+
+
+State 56
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  127 function_arg_list: expression •
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 127 (function_arg_list)
+
+
+State 57
+
+  126 function_call: IDENTIFIER '(' function_arg_list • ')'
+  128 function_arg_list: function_arg_list • ',' expression
+
+    ','  shift, and go to state 79
+    ')'  shift, and go to state 80
+
+
+State 58
+
+  117 expression: '(' expression ')' •
+
+    $default  reduce using rule 117 (expression)
+
+
+State 59
+
+    9 select_statement: SELECT select_list FROM table_reference_list • where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    WHERE  shift, and go to state 77
+
+    $default  reduce using rule 29 (where_clause_opt)
+
+    where_clause_opt  go to state 81
+
+
+State 60
+
+   15 table_reference_list: table_reference •
+   19 table_reference: table_reference • join_type JOIN table_reference ON search_condition
+
+    INNER  shift, and go to state 82
+    LEFT   shift, and go to state 83
+    RIGHT  shift, and go to state 84
+    FULL   shift, and go to state 85
+
+    JOIN      reduce using rule 21 (join_type)
+    $default  reduce using rule 15 (table_reference_list)
+
+    join_type  go to state 86
+
+
+State 61
+
+   16 table_reference: table_name •
+   17                | table_name • IDENTIFIER
+   18                | table_name • AS IDENTIFIER
+
+    AS          shift, and go to state 87
+    IDENTIFIER  shift, and go to state 88
+
+    $default  reduce using rule 16 (table_reference)
+
+
+State 62
+
+   11 select_list: select_list ',' select_item •
+
+    $default  reduce using rule 11 (select_list)
+
+
+State 63
+
+  120 term: table_name '.' IDENTIFIER •
+
+    $default  reduce using rule 120 (term)
+
+
+State 64
+
+   13 select_item: expression AS IDENTIFIER •
+
+    $default  reduce using rule 13 (select_item)
+
+
+State 65
+
+  112 expression: expression • '+' expression
+  112           | expression '+' expression •
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 112 (expression)
+
+
+State 66
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  113           | expression '-' expression •
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 113 (expression)
+
+
+State 67
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  114           | expression '*' expression •
+  115           | expression • '/' expression
+
+    $default  reduce using rule 114 (expression)
+
+
+State 68
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  115           | expression '/' expression •
+
+    $default  reduce using rule 115 (expression)
+
+
+State 69
+
+   60 create_statement: CREATE TABLE table_name '(' • column_definition_list ')'
+
+    IDENTIFIER  shift, and go to state 89
+
+    column_definition_list  go to state 90
+    column_definition       go to state 91
+
+
+State 70
+
+   52 insert_columns_clause: '(' • column_reference_list ')'
+
+    IDENTIFIER  shift, and go to state 72
+
+    table_name             go to state 73
+    column_reference_list  go to state 92
+    column_reference       go to state 93
+
+
+State 71
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause • VALUES '(' insert_values_list ')'
+
+    VALUES  shift, and go to state 94
+
+
+State 72
+
+   20 table_name: IDENTIFIER •
+   35 column_reference: IDENTIFIER •
+
+    '.'       reduce using rule 20 (table_name)
+    $default  reduce using rule 35 (column_reference)
+
+
+State 73
+
+   36 column_reference: table_name • '.' IDENTIFIER
+
+    '.'  shift, and go to state 95
+
+
+State 74
+
+   58 update_item: column_reference • '=' expression
+
+    '='  shift, and go to state 96
+
+
+State 75
+
+   55 update_statement: UPDATE table_name SET update_list • where_clause_opt
+   57 update_list: update_list • ',' update_item
+
+    WHERE  shift, and go to state 77
+    ','    shift, and go to state 97
+
+    $default  reduce using rule 29 (where_clause_opt)
+
+    where_clause_opt  go to state 98
+
+
+State 76
+
+   56 update_list: update_item •
+
+    $default  reduce using rule 56 (update_list)
+
+
+State 77
+
+   30 where_clause_opt: WHERE • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 102
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 78
+
+   59 delete_statement: DELETE FROM table_name where_clause_opt •
+
+    $default  reduce using rule 59 (delete_statement)
+
+
+State 79
+
+  128 function_arg_list: function_arg_list ',' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 111
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 80
+
+  126 function_call: IDENTIFIER '(' function_arg_list ')' •
+
+    $default  reduce using rule 126 (function_call)
+
+
+State 81
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt • group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    GROUP  shift, and go to state 112
+
+    $default  reduce using rule 31 (group_by_clause_opt)
+
+    group_by_clause_opt  go to state 113
+
+
+State 82
+
+   22 join_type: INNER •
+
+    $default  reduce using rule 22 (join_type)
+
+
+State 83
+
+   23 join_type: LEFT • OUTER
+   26          | LEFT •
+
+    OUTER  shift, and go to state 114
+
+    $default  reduce using rule 26 (join_type)
+
+
+State 84
+
+   24 join_type: RIGHT • OUTER
+   27          | RIGHT •
+
+    OUTER  shift, and go to state 115
+
+    $default  reduce using rule 27 (join_type)
+
+
+State 85
+
+   25 join_type: FULL • OUTER
+   28          | FULL •
+
+    OUTER  shift, and go to state 116
+
+    $default  reduce using rule 28 (join_type)
+
+
+State 86
+
+   19 table_reference: table_reference join_type • JOIN table_reference ON search_condition
+
+    JOIN  shift, and go to state 117
+
+
+State 87
+
+   18 table_reference: table_name AS • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 118
+
+
+State 88
+
+   17 table_reference: table_name IDENTIFIER •
+
+    $default  reduce using rule 17 (table_reference)
+
+
+State 89
+
+   63 column_definition: IDENTIFIER • data_type column_constraint_list_opt
+
+    INT      shift, and go to state 119
+    CHAR     shift, and go to state 120
+    VARCHAR  shift, and go to state 121
+    NUMBER   shift, and go to state 122
+    DATE     shift, and go to state 123
+    TEXT     shift, and go to state 124
+
+    data_type  go to state 125
+
+
+State 90
+
+   60 create_statement: CREATE TABLE table_name '(' column_definition_list • ')'
+   62 column_definition_list: column_definition_list • ',' column_definition
+
+    ','  shift, and go to state 126
+    ')'  shift, and go to state 127
+
+
+State 91
+
+   61 column_definition_list: column_definition •
+
+    $default  reduce using rule 61 (column_definition_list)
+
+
+State 92
+
+   34 column_reference_list: column_reference_list • ',' column_reference
+   52 insert_columns_clause: '(' column_reference_list • ')'
+
+    ','  shift, and go to state 128
+    ')'  shift, and go to state 129
+
+
+State 93
+
+   33 column_reference_list: column_reference •
+
+    $default  reduce using rule 33 (column_reference_list)
+
+
+State 94
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause VALUES • '(' insert_values_list ')'
+
+    '('  shift, and go to state 130
+
+
+State 95
+
+   36 column_reference: table_name '.' • IDENTIFIER
+
+    IDENTIFIER  shift, and go to state 131
+
+
+State 96
+
+   58 update_item: column_reference '=' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 132
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 97
+
+   57 update_list: update_list ',' • update_item
+
+    IDENTIFIER  shift, and go to state 72
+
+    table_name        go to state 73
+    column_reference  go to state 74
+    update_item       go to state 133
+
+
+State 98
+
+   55 update_statement: UPDATE table_name SET update_list where_clause_opt •
+
+    $default  reduce using rule 55 (update_statement)
+
+
+State 99
+
+   85 search_condition: NOT • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 134
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 100
+
+  108 exists_predicate: EXISTS • '(' select_statement ')'
+
+    '('  shift, and go to state 135
+
+
+State 101
+
+   86 search_condition: '(' • search_condition ')'
+  117 expression: '(' • expression ')'
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 136
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 137
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 102
+
+   30 where_clause_opt: WHERE search_condition •
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+
+    AND  shift, and go to state 138
+    OR   shift, and go to state 139
+
+    $default  reduce using rule 30 (where_clause_opt)
+
+
+State 103
+
+   87 search_condition: predicate •
+
+    $default  reduce using rule 87 (search_condition)
+
+
+State 104
+
+   88 predicate: comparison_predicate •
+
+    $default  reduce using rule 88 (predicate)
+
+
+State 105
+
+   89 predicate: between_predicate •
+
+    $default  reduce using rule 89 (predicate)
+
+
+State 106
+
+   90 predicate: in_predicate •
+
+    $default  reduce using rule 90 (predicate)
+
+
+State 107
+
+   91 predicate: like_predicate •
+
+    $default  reduce using rule 91 (predicate)
+
+
+State 108
+
+   92 predicate: null_predicate •
+
+    $default  reduce using rule 92 (predicate)
+
+
+State 109
+
+   93 predicate: exists_predicate •
+
+    $default  reduce using rule 93 (predicate)
+
+
+State 110
+
+   94 comparison_predicate: expression • '=' expression
+   95                     | expression • '<' expression
+   96                     | expression • '>' expression
+   97                     | expression • LE expression
+   98                     | expression • GE expression
+   99                     | expression • NE expression
+  100 between_predicate: expression • BETWEEN expression AND expression
+  101                  | expression • NOT BETWEEN expression AND expression
+  102 in_predicate: expression • IN '(' expression_list ')'
+  103             | expression • NOT IN '(' expression_list ')'
+  104 like_predicate: expression • LIKE expression
+  105               | expression • NOT LIKE expression
+  106 null_predicate: expression • IS SQLNULL
+  107               | expression • IS NOT SQLNULL
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    NOT      shift, and go to state 140
+    IS       shift, and go to state 141
+    IN       shift, and go to state 142
+    LIKE     shift, and go to state 143
+    BETWEEN  shift, and go to state 144
+    LE       shift, and go to state 145
+    GE       shift, and go to state 146
+    NE       shift, and go to state 147
+    '='      shift, and go to state 148
+    '<'      shift, and go to state 149
+    '>'      shift, and go to state 150
+    '+'      shift, and go to state 47
+    '-'      shift, and go to state 48
+    '*'      shift, and go to state 49
+    '/'      shift, and go to state 50
+
+
+State 111
+
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  128 function_arg_list: function_arg_list ',' expression •
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 128 (function_arg_list)
+
+
+State 112
+
+   32 group_by_clause_opt: GROUP • BY column_reference_list
+
+    BY  shift, and go to state 151
+
+
+State 113
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt • having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    HAVING  shift, and go to state 152
+
+    $default  reduce using rule 37 (having_clause_opt)
+
+    having_clause_opt  go to state 153
+
+
+State 114
+
+   23 join_type: LEFT OUTER •
+
+    $default  reduce using rule 23 (join_type)
+
+
+State 115
+
+   24 join_type: RIGHT OUTER •
+
+    $default  reduce using rule 24 (join_type)
+
+
+State 116
+
+   25 join_type: FULL OUTER •
+
+    $default  reduce using rule 25 (join_type)
+
+
+State 117
+
+   19 table_reference: table_reference join_type JOIN • table_reference ON search_condition
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_reference  go to state 154
+    table_name       go to state 61
+
+
+State 118
+
+   18 table_reference: table_name AS IDENTIFIER •
+
+    $default  reduce using rule 18 (table_reference)
+
+
+State 119
+
+   64 data_type: INT •
+
+    $default  reduce using rule 64 (data_type)
+
+
+State 120
+
+   65 data_type: CHAR • '(' INTEGER_LITERAL ')'
+
+    '('  shift, and go to state 155
+
+
+State 121
+
+   66 data_type: VARCHAR • '(' INTEGER_LITERAL ')'
+
+    '('  shift, and go to state 156
+
+
+State 122
+
+   67 data_type: NUMBER •
+
+    $default  reduce using rule 67 (data_type)
+
+
+State 123
+
+   68 data_type: DATE •
+
+    $default  reduce using rule 68 (data_type)
+
+
+State 124
+
+   69 data_type: TEXT •
+
+    $default  reduce using rule 69 (data_type)
+
+
+State 125
+
+   63 column_definition: IDENTIFIER data_type • column_constraint_list_opt
+
+    NOT      shift, and go to state 157
+    SQLNULL  shift, and go to state 158
+    PRIMARY  shift, and go to state 159
+    UNIQUE   shift, and go to state 160
+    DEFAULT  shift, and go to state 161
+    FOREIGN  shift, and go to state 162
+
+    $default  reduce using rule 70 (column_constraint_list_opt)
+
+    column_constraint_list_opt  go to state 163
+    column_constraint_list      go to state 164
+    column_constraint           go to state 165
+
+
+State 126
+
+   62 column_definition_list: column_definition_list ',' • column_definition
+
+    IDENTIFIER  shift, and go to state 89
+
+    column_definition  go to state 166
+
+
+State 127
+
+   60 create_statement: CREATE TABLE table_name '(' column_definition_list ')' •
+
+    $default  reduce using rule 60 (create_statement)
+
+
+State 128
+
+   34 column_reference_list: column_reference_list ',' • column_reference
+
+    IDENTIFIER  shift, and go to state 72
+
+    table_name        go to state 73
+    column_reference  go to state 167
+
+
+State 129
+
+   52 insert_columns_clause: '(' column_reference_list ')' •
+
+    $default  reduce using rule 52 (insert_columns_clause)
+
+
+State 130
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause VALUES '(' • insert_values_list ')'
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name          go to state 25
+    insert_values_list  go to state 168
+    expression          go to state 169
+    term                go to state 27
+    function_call       go to state 28
+
+
+State 131
+
+   36 column_reference: table_name '.' IDENTIFIER •
+
+    $default  reduce using rule 36 (column_reference)
+
+
+State 132
+
+   58 update_item: column_reference '=' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 58 (update_item)
+
+
+State 133
+
+   57 update_list: update_list ',' update_item •
+
+    $default  reduce using rule 57 (update_list)
+
+
+State 134
+
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+   85                 | NOT search_condition •
+
+    $default  reduce using rule 85 (search_condition)
+
+
+State 135
+
+  108 exists_predicate: EXISTS '(' • select_statement ')'
+
+    SELECT  shift, and go to state 3
+
+    select_statement  go to state 170
+
+
+State 136
+
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+   86                 | '(' search_condition • ')'
+
+    AND  shift, and go to state 138
+    OR   shift, and go to state 139
+    ')'  shift, and go to state 171
+
+
+State 137
+
+   94 comparison_predicate: expression • '=' expression
+   95                     | expression • '<' expression
+   96                     | expression • '>' expression
+   97                     | expression • LE expression
+   98                     | expression • GE expression
+   99                     | expression • NE expression
+  100 between_predicate: expression • BETWEEN expression AND expression
+  101                  | expression • NOT BETWEEN expression AND expression
+  102 in_predicate: expression • IN '(' expression_list ')'
+  103             | expression • NOT IN '(' expression_list ')'
+  104 like_predicate: expression • LIKE expression
+  105               | expression • NOT LIKE expression
+  106 null_predicate: expression • IS SQLNULL
+  107               | expression • IS NOT SQLNULL
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+  117           | '(' expression • ')'
+
+    NOT      shift, and go to state 140
+    IS       shift, and go to state 141
+    IN       shift, and go to state 142
+    LIKE     shift, and go to state 143
+    BETWEEN  shift, and go to state 144
+    LE       shift, and go to state 145
+    GE       shift, and go to state 146
+    NE       shift, and go to state 147
+    '='      shift, and go to state 148
+    '<'      shift, and go to state 149
+    '>'      shift, and go to state 150
+    '+'      shift, and go to state 47
+    '-'      shift, and go to state 48
+    '*'      shift, and go to state 49
+    '/'      shift, and go to state 50
+    ')'      shift, and go to state 58
+
+
+State 138
+
+   84 search_condition: search_condition AND • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 172
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 139
+
+   83 search_condition: search_condition OR • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 173
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 140
+
+  101 between_predicate: expression NOT • BETWEEN expression AND expression
+  103 in_predicate: expression NOT • IN '(' expression_list ')'
+  105 like_predicate: expression NOT • LIKE expression
+
+    IN       shift, and go to state 174
+    LIKE     shift, and go to state 175
+    BETWEEN  shift, and go to state 176
+
+
+State 141
+
+  106 null_predicate: expression IS • SQLNULL
+  107               | expression IS • NOT SQLNULL
+
+    NOT      shift, and go to state 177
+    SQLNULL  shift, and go to state 178
+
+
+State 142
+
+  102 in_predicate: expression IN • '(' expression_list ')'
+
+    '('  shift, and go to state 179
+
+
+State 143
+
+  104 like_predicate: expression LIKE • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 180
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 144
+
+  100 between_predicate: expression BETWEEN • expression AND expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 181
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 145
+
+   97 comparison_predicate: expression LE • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 182
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 146
+
+   98 comparison_predicate: expression GE • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 183
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 147
+
+   99 comparison_predicate: expression NE • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 184
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 148
+
+   94 comparison_predicate: expression '=' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 185
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 149
+
+   95 comparison_predicate: expression '<' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 186
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 150
+
+   96 comparison_predicate: expression '>' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 187
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 151
+
+   32 group_by_clause_opt: GROUP BY • column_reference_list
+
+    IDENTIFIER  shift, and go to state 72
+
+    table_name             go to state 73
+    column_reference_list  go to state 188
+    column_reference       go to state 93
+
+
+State 152
+
+   38 having_clause_opt: HAVING • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 189
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 153
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt • order_by_clause_opt limit_clause_opt offset_clause_opt
+
+    ORDER  shift, and go to state 190
+
+    $default  reduce using rule 39 (order_by_clause_opt)
+
+    order_by_clause_opt  go to state 191
+
+
+State 154
+
+   19 table_reference: table_reference • join_type JOIN table_reference ON search_condition
+   19                | table_reference join_type JOIN table_reference • ON search_condition
+
+    INNER  shift, and go to state 82
+    LEFT   shift, and go to state 83
+    RIGHT  shift, and go to state 84
+    FULL   shift, and go to state 85
+    ON     shift, and go to state 192
+
+    $default  reduce using rule 21 (join_type)
+
+    join_type  go to state 86
+
+
+State 155
+
+   65 data_type: CHAR '(' • INTEGER_LITERAL ')'
+
+    INTEGER_LITERAL  shift, and go to state 193
+
+
+State 156
+
+   66 data_type: VARCHAR '(' • INTEGER_LITERAL ')'
+
+    INTEGER_LITERAL  shift, and go to state 194
+
+
+State 157
+
+   74 column_constraint: NOT • SQLNULL
+
+    SQLNULL  shift, and go to state 195
+
+
+State 158
+
+   75 column_constraint: SQLNULL •
+
+    $default  reduce using rule 75 (column_constraint)
+
+
+State 159
+
+   76 column_constraint: PRIMARY • KEY
+
+    KEY  shift, and go to state 196
+
+
+State 160
+
+   77 column_constraint: UNIQUE •
+
+    $default  reduce using rule 77 (column_constraint)
+
+
+State 161
+
+   78 column_constraint: DEFAULT • default_value
+
+    STRING_LITERAL   shift, and go to state 197
+    INTEGER_LITERAL  shift, and go to state 198
+
+    default_value  go to state 199
+
+
+State 162
+
+   79 column_constraint: FOREIGN • KEY REFERENCES table_name '(' IDENTIFIER ')'
+
+    KEY  shift, and go to state 200
+
+
+State 163
+
+   63 column_definition: IDENTIFIER data_type column_constraint_list_opt •
+
+    $default  reduce using rule 63 (column_definition)
+
+
+State 164
+
+   71 column_constraint_list_opt: column_constraint_list •
+   73 column_constraint_list: column_constraint_list • column_constraint
+
+    NOT      shift, and go to state 157
+    SQLNULL  shift, and go to state 158
+    PRIMARY  shift, and go to state 159
+    UNIQUE   shift, and go to state 160
+    DEFAULT  shift, and go to state 161
+    FOREIGN  shift, and go to state 162
+
+    $default  reduce using rule 71 (column_constraint_list_opt)
+
+    column_constraint  go to state 201
+
+
+State 165
+
+   72 column_constraint_list: column_constraint •
+
+    $default  reduce using rule 72 (column_constraint_list)
+
+
+State 166
+
+   62 column_definition_list: column_definition_list ',' column_definition •
+
+    $default  reduce using rule 62 (column_definition_list)
+
+
+State 167
+
+   34 column_reference_list: column_reference_list ',' column_reference •
+
+    $default  reduce using rule 34 (column_reference_list)
+
+
+State 168
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list • ')'
+   54 insert_values_list: insert_values_list • ',' expression
+
+    ','  shift, and go to state 202
+    ')'  shift, and go to state 203
+
+
+State 169
+
+   53 insert_values_list: expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 53 (insert_values_list)
+
+
+State 170
+
+  108 exists_predicate: EXISTS '(' select_statement • ')'
+
+    ')'  shift, and go to state 204
+
+
+State 171
+
+   86 search_condition: '(' search_condition ')' •
+
+    $default  reduce using rule 86 (search_condition)
+
+
+State 172
+
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+   84                 | search_condition AND search_condition •
+
+    $default  reduce using rule 84 (search_condition)
+
+
+State 173
+
+   83 search_condition: search_condition • OR search_condition
+   83                 | search_condition OR search_condition •
+   84                 | search_condition • AND search_condition
+
+    AND  shift, and go to state 138
+
+    $default  reduce using rule 83 (search_condition)
+
+
+State 174
+
+  103 in_predicate: expression NOT IN • '(' expression_list ')'
+
+    '('  shift, and go to state 205
+
+
+State 175
+
+  105 like_predicate: expression NOT LIKE • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 206
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 176
+
+  101 between_predicate: expression NOT BETWEEN • expression AND expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 207
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 177
+
+  107 null_predicate: expression IS NOT • SQLNULL
+
+    SQLNULL  shift, and go to state 208
+
+
+State 178
+
+  106 null_predicate: expression IS SQLNULL •
+
+    $default  reduce using rule 106 (null_predicate)
+
+
+State 179
+
+  102 in_predicate: expression IN '(' • expression_list ')'
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name       go to state 25
+    expression_list  go to state 209
+    expression       go to state 210
+    term             go to state 27
+    function_call    go to state 28
+
+
+State 180
+
+  104 like_predicate: expression LIKE expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 104 (like_predicate)
+
+
+State 181
+
+  100 between_predicate: expression BETWEEN expression • AND expression
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    AND  shift, and go to state 211
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+
+State 182
+
+   97 comparison_predicate: expression LE expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 97 (comparison_predicate)
+
+
+State 183
+
+   98 comparison_predicate: expression GE expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 98 (comparison_predicate)
+
+
+State 184
+
+   99 comparison_predicate: expression NE expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 99 (comparison_predicate)
+
+
+State 185
+
+   94 comparison_predicate: expression '=' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 94 (comparison_predicate)
+
+
+State 186
+
+   95 comparison_predicate: expression '<' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 95 (comparison_predicate)
+
+
+State 187
+
+   96 comparison_predicate: expression '>' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 96 (comparison_predicate)
+
+
+State 188
+
+   32 group_by_clause_opt: GROUP BY column_reference_list •
+   34 column_reference_list: column_reference_list • ',' column_reference
+
+    ','  shift, and go to state 128
+
+    $default  reduce using rule 32 (group_by_clause_opt)
+
+
+State 189
+
+   38 having_clause_opt: HAVING search_condition •
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+
+    AND  shift, and go to state 138
+    OR   shift, and go to state 139
+
+    $default  reduce using rule 38 (having_clause_opt)
+
+
+State 190
+
+   40 order_by_clause_opt: ORDER • BY order_by_list
+
+    BY  shift, and go to state 212
+
+
+State 191
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt • limit_clause_opt offset_clause_opt
+
+    LIMIT  shift, and go to state 213
+
+    $default  reduce using rule 46 (limit_clause_opt)
+
+    limit_clause_opt  go to state 214
+
+
+State 192
+
+   19 table_reference: table_reference join_type JOIN table_reference ON • search_condition
+
+    NOT              shift, and go to state 99
+    EXISTS           shift, and go to state 100
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 101
+
+    table_name            go to state 25
+    search_condition      go to state 215
+    predicate             go to state 103
+    comparison_predicate  go to state 104
+    between_predicate     go to state 105
+    in_predicate          go to state 106
+    like_predicate        go to state 107
+    null_predicate        go to state 108
+    exists_predicate      go to state 109
+    expression            go to state 110
+    term                  go to state 27
+    function_call         go to state 28
+
+
+State 193
+
+   65 data_type: CHAR '(' INTEGER_LITERAL • ')'
+
+    ')'  shift, and go to state 216
+
+
+State 194
+
+   66 data_type: VARCHAR '(' INTEGER_LITERAL • ')'
+
+    ')'  shift, and go to state 217
+
+
+State 195
+
+   74 column_constraint: NOT SQLNULL •
+
+    $default  reduce using rule 74 (column_constraint)
+
+
+State 196
+
+   76 column_constraint: PRIMARY KEY •
+
+    $default  reduce using rule 76 (column_constraint)
+
+
+State 197
+
+   81 default_value: STRING_LITERAL •
+
+    $default  reduce using rule 81 (default_value)
+
+
+State 198
+
+   80 default_value: INTEGER_LITERAL •
+
+    $default  reduce using rule 80 (default_value)
+
+
+State 199
+
+   78 column_constraint: DEFAULT default_value •
+
+    $default  reduce using rule 78 (column_constraint)
+
+
+State 200
+
+   79 column_constraint: FOREIGN KEY • REFERENCES table_name '(' IDENTIFIER ')'
+
+    REFERENCES  shift, and go to state 218
+
+
+State 201
+
+   73 column_constraint_list: column_constraint_list column_constraint •
+
+    $default  reduce using rule 73 (column_constraint_list)
+
+
+State 202
+
+   54 insert_values_list: insert_values_list ',' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 219
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 203
+
+   50 insert_statement: INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list ')' •
+
+    $default  reduce using rule 50 (insert_statement)
+
+
+State 204
+
+  108 exists_predicate: EXISTS '(' select_statement ')' •
+
+    $default  reduce using rule 108 (exists_predicate)
+
+
+State 205
+
+  103 in_predicate: expression NOT IN '(' • expression_list ')'
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name       go to state 25
+    expression_list  go to state 220
+    expression       go to state 210
+    term             go to state 27
+    function_call    go to state 28
+
+
+State 206
+
+  105 like_predicate: expression NOT LIKE expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 105 (like_predicate)
+
+
+State 207
+
+  101 between_predicate: expression NOT BETWEEN expression • AND expression
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    AND  shift, and go to state 221
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+
+State 208
+
+  107 null_predicate: expression IS NOT SQLNULL •
+
+    $default  reduce using rule 107 (null_predicate)
+
+
+State 209
+
+  102 in_predicate: expression IN '(' expression_list • ')'
+  110 expression_list: expression_list • ',' expression
+
+    ','  shift, and go to state 222
+    ')'  shift, and go to state 223
+
+
+State 210
+
+  109 expression_list: expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 109 (expression_list)
+
+
+State 211
+
+  100 between_predicate: expression BETWEEN expression AND • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 224
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 212
+
+   40 order_by_clause_opt: ORDER BY • order_by_list
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    order_by_list  go to state 225
+    order_by_item  go to state 226
+    expression     go to state 227
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 213
+
+   47 limit_clause_opt: LIMIT • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 228
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 214
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt • offset_clause_opt
+
+    OFFSET  shift, and go to state 229
+
+    $default  reduce using rule 48 (offset_clause_opt)
+
+    offset_clause_opt  go to state 230
+
+
+State 215
+
+   19 table_reference: table_reference join_type JOIN table_reference ON search_condition •
+   83 search_condition: search_condition • OR search_condition
+   84                 | search_condition • AND search_condition
+
+    AND  shift, and go to state 138
+    OR   shift, and go to state 139
+
+    $default  reduce using rule 19 (table_reference)
+
+
+State 216
+
+   65 data_type: CHAR '(' INTEGER_LITERAL ')' •
+
+    $default  reduce using rule 65 (data_type)
+
+
+State 217
+
+   66 data_type: VARCHAR '(' INTEGER_LITERAL ')' •
+
+    $default  reduce using rule 66 (data_type)
+
+
+State 218
+
+   79 column_constraint: FOREIGN KEY REFERENCES • table_name '(' IDENTIFIER ')'
+
+    IDENTIFIER  shift, and go to state 31
+
+    table_name  go to state 231
+
+
+State 219
+
+   54 insert_values_list: insert_values_list ',' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 54 (insert_values_list)
+
+
+State 220
+
+  103 in_predicate: expression NOT IN '(' expression_list • ')'
+  110 expression_list: expression_list • ',' expression
+
+    ','  shift, and go to state 222
+    ')'  shift, and go to state 232
+
+
+State 221
+
+  101 between_predicate: expression NOT BETWEEN expression AND • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 233
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 222
+
+  110 expression_list: expression_list ',' • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 234
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 223
+
+  102 in_predicate: expression IN '(' expression_list ')' •
+
+    $default  reduce using rule 102 (in_predicate)
+
+
+State 224
+
+  100 between_predicate: expression BETWEEN expression AND expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 100 (between_predicate)
+
+
+State 225
+
+   40 order_by_clause_opt: ORDER BY order_by_list •
+   42 order_by_list: order_by_list • ',' order_by_item
+
+    ','  shift, and go to state 235
+
+    $default  reduce using rule 40 (order_by_clause_opt)
+
+
+State 226
+
+   41 order_by_list: order_by_item •
+
+    $default  reduce using rule 41 (order_by_list)
+
+
+State 227
+
+   43 order_by_item: expression •
+   44              | expression • ASC
+   45              | expression • DESC
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    ASC   shift, and go to state 236
+    DESC  shift, and go to state 237
+    '+'   shift, and go to state 47
+    '-'   shift, and go to state 48
+    '*'   shift, and go to state 49
+    '/'   shift, and go to state 50
+
+    $default  reduce using rule 43 (order_by_item)
+
+
+State 228
+
+   47 limit_clause_opt: LIMIT expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 47 (limit_clause_opt)
+
+
+State 229
+
+   49 offset_clause_opt: OFFSET • expression
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    expression     go to state 238
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 230
+
+    9 select_statement: SELECT select_list FROM table_reference_list where_clause_opt group_by_clause_opt having_clause_opt order_by_clause_opt limit_clause_opt offset_clause_opt •
+
+    $default  reduce using rule 9 (select_statement)
+
+
+State 231
+
+   79 column_constraint: FOREIGN KEY REFERENCES table_name • '(' IDENTIFIER ')'
+
+    '('  shift, and go to state 239
+
+
+State 232
+
+  103 in_predicate: expression NOT IN '(' expression_list ')' •
+
+    $default  reduce using rule 103 (in_predicate)
+
+
+State 233
+
+  101 between_predicate: expression NOT BETWEEN expression AND expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 101 (between_predicate)
+
+
+State 234
+
+  110 expression_list: expression_list ',' expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 110 (expression_list)
+
+
+State 235
+
+   42 order_by_list: order_by_list ',' • order_by_item
+
+    IDENTIFIER       shift, and go to state 16
+    STRING_LITERAL   shift, and go to state 17
+    INTEGER_LITERAL  shift, and go to state 18
+    FLOAT_LITERAL    shift, and go to state 19
+    '-'              shift, and go to state 20
+    '*'              shift, and go to state 21
+    '('              shift, and go to state 22
+
+    table_name     go to state 25
+    order_by_item  go to state 240
+    expression     go to state 227
+    term           go to state 27
+    function_call  go to state 28
+
+
+State 236
+
+   44 order_by_item: expression ASC •
+
+    $default  reduce using rule 44 (order_by_item)
+
+
+State 237
+
+   45 order_by_item: expression DESC •
+
+    $default  reduce using rule 45 (order_by_item)
+
+
+State 238
+
+   49 offset_clause_opt: OFFSET expression •
+  112 expression: expression • '+' expression
+  113           | expression • '-' expression
+  114           | expression • '*' expression
+  115           | expression • '/' expression
+
+    '+'  shift, and go to state 47
+    '-'  shift, and go to state 48
+    '*'  shift, and go to state 49
+    '/'  shift, and go to state 50
+
+    $default  reduce using rule 49 (offset_clause_opt)
+
+
+State 239
+
+   79 column_constraint: FOREIGN KEY REFERENCES table_name '(' • IDENTIFIER ')'
+
+    IDENTIFIER  shift, and go to state 241
+
+
+State 240
+
+   42 order_by_list: order_by_list ',' order_by_item •
+
+    $default  reduce using rule 42 (order_by_list)
+
+
+State 241
+
+   79 column_constraint: FOREIGN KEY REFERENCES table_name '(' IDENTIFIER • ')'
+
+    ')'  shift, and go to state 242
+
+
+State 242
+
+   79 column_constraint: FOREIGN KEY REFERENCES table_name '(' IDENTIFIER ')' •
+
+    $default  reduce using rule 79 (column_constraint)

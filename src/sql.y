@@ -30,6 +30,7 @@ extern int  yylex (void);
     column_definition* colmn_def;
     create_table* create_tbl;
     datatype* dtype;
+    insert_stmt* insert;
 }
 
 /* ----------------------------------------------------------------------------
@@ -41,7 +42,7 @@ extern int  yylex (void);
 %token CREATE TABLE INSERT INTO VALUES UPDATE SET DELETE
 %token INT CHAR VARCHAR NUMBER DATE TEXT
 %token PRIMARY KEY UNIQUE DEFAULT REFERENCES FOREIGN
-%token EXISTS LIMIT OFFSET
+%token EXISTS LIMIT OFFSET DROP
 %token LE GE NE                       /*  <=  >=  <> / !=  */
 %token <str_val>   IDENTIFIER STRING_LITERAL
 %token <int_val>   INTEGER_LITERAL
@@ -50,12 +51,14 @@ extern int  yylex (void);
 %type <select_statement_node> select_statement
 %type <table_ref_list> table_reference table_reference_list
 %type <ast_node> select_item  select_list 
-%type <ast_node> table_name 
+%type <ast_node> table_name drop_table
 %type <ast_node> expression term  
 %type <ast_node> column_constraint column_constraint_list column_constraint_list_opt 
 %type <create_tbl> create_statement 
 %type <colmn_def> column_definition column_definition_list
 %type <dtype> data_type default_value
+%type <insert> insert_statement
+%type <ast_node> insert_columns_clause insert_values_list column_reference column_reference_list
 /* precedence / associativity */
 %left OR
 %left AND
@@ -78,10 +81,11 @@ query
 
 sql_statement
     : select_statement ';'{$1->print_select();}
-    | insert_statement
+    | insert_statement ';' {$1->print_insert();}
     | update_statement
     | delete_statement
     | create_statement ';' {$1->print_table();}
+    | drop_table ';' {$1->print_ast(0);}
     ;
 
 select_statement
@@ -89,14 +93,6 @@ select_statement
           where_clause_opt group_by_clause_opt having_clause_opt
           order_by_clause_opt limit_clause_opt offset_clause_opt{
             /*phase 1*/
-            // AST* select = new AST("select_statement");
-            // AST* select_list_items = new AST("select_list");
-            // select_list_items->ptr_children = $2;
-            // select->ptr_children = select_list_items;
-            // AST* from_clauses = new AST("from_clause");
-            // from_clauses->ptr_children = $4;
-            // select_list_items->ptr_sibling = from_clauses;
-            // $$ = select;
             select_node* select = new select_node();
             select->select_list.reset($2);
             select->table_reference_list.reset($4);
@@ -175,13 +171,24 @@ group_by_clause_opt
     ;
 
 column_reference_list
-    : column_reference
-    | column_reference_list ',' column_reference
+    : column_reference { $$ = $1;}
+    | column_reference_list ',' column_reference {
+        AST* last = $1;
+        while (last->ptr_sibling != nullptr) {
+            last = last->ptr_sibling;
+        }
+        last->ptr_sibling = $3;
+        $$ = $1;
+    }
     ;
 
 column_reference
-    : IDENTIFIER
-    | table_name '.' IDENTIFIER
+    : IDENTIFIER {
+        $$ = new AST(std::string($1));
+    }
+    | table_name '.' IDENTIFIER {
+
+    }
     ;
 
 having_clause_opt
@@ -215,36 +222,61 @@ offset_clause_opt
     
 /* INSERT statement */
 insert_statement
-    : INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list ')'
+    : INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list ')' {
+        insert_stmt* insert_instance = new insert_stmt();
+        insert_instance->table_name.reset($3);
+        insert_instance->columns_to_insert = $4 ;
+        insert_instance->values = $7;
+        $$ = insert_instance;
+    }
     ;
 
 insert_columns_clause
-    : /* empty */
-    | '(' column_reference_list ')'
+    : /* empty */ { $$ = nullptr;}
+    | '(' column_reference_list ')' {
+        $$ = $2;
+    }
     ;
 
 insert_values_list
-    : expression
-    | insert_values_list ',' expression
+    : expression { $$ = $1 ;}
+    | insert_values_list ',' expression {
+        AST* last = $1;
+        while (last->ptr_sibling != nullptr) {
+            last = last->ptr_sibling;
+        }
+        last->ptr_sibling = $3;
+        $$ = $1;
+    }
     ;
 
 /* UPDATE statement */
 update_statement
-    : UPDATE table_name SET update_list where_clause_opt
+    : UPDATE table_name SET update_list where_clause_opt {
+        
+    }
     ;
 
 update_list
-    : update_item
-    | update_list ',' update_item
+    : update_item {
+
+    }
+    | update_list ',' update_item {
+
+    }
     ;
 
 update_item
-    : column_reference '=' expression
+    : column_reference '=' expression {
+
+    }
     ;
 
 /* DELETE statement */
 delete_statement
-    : DELETE FROM table_name where_clause_opt
+    : DELETE FROM table_name where_clause_opt {
+
+    }
     ;
 
 /* CREATE TABLE statement */
@@ -359,6 +391,14 @@ default_value
     /* | SQLNULL         { $$ = new AST(std::to_string($1));} */
     ;
 
+/*drop table */
+drop_table
+    : DROP table_name {
+        AST* drop = new AST("DROP TABLE");
+        drop->ptr_children = $2;
+        $$ = drop;
+    }
+
 /* Conditions */
 search_condition
     : search_condition OR search_condition
@@ -433,9 +473,23 @@ term
         $$ = new AST(std::string($1)) ;;
     }
     | table_name '.' IDENTIFIER {}
-    | INTEGER_LITERAL {}
-    | FLOAT_LITERAL {}
-    | STRING_LITERAL {}
+    | INTEGER_LITERAL {
+        datatype* data = new inttype();
+        ((inttype*)data)->value = $1;
+        AST* intnode = new AST("INT");
+        intnode->ptr_children = (AST*)data;
+        $$ = intnode;
+    }
+    | FLOAT_LITERAL {
+        // $$ = new AST(std::to_string($1));
+    }
+    | STRING_LITERAL {
+        datatype* data = new varchar(10);
+        ((varchar*)data)->value = std::string($1);
+        AST* strnode = new AST("STR");
+        strnode->ptr_children = (AST*)data;
+        $$ = strnode;
+    }
     | '*'{
         $$ = new AST("*") ;
     }

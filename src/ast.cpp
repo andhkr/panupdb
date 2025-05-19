@@ -89,3 +89,29 @@ void create_table::print_table(){
         curr = (column_definition*)(((AST*)curr)->ptr_sibling);
     }
 }
+
+void insert_stmt::print_insert(){
+    std::cout<<"INSERT INTO TABLE "<<this->table_name->identifier<<std::endl;
+    std::cout<<"columns list"<<std::endl;
+    if(this->columns_to_insert){
+        this->columns_to_insert->print_ast(1);
+    }
+    std::cout<<"VALUES"<<std::endl;
+    AST* curr = this->values;
+    while(curr){
+        switch(((datatype*)(curr->ptr_children))->get_type()){
+            case INT:{
+                std::cout<<"  |- "<<(((inttype*)(curr->ptr_children))->value)<<std::endl;
+                break;
+            }
+            case VARCHAR:{
+                std::cout<<"  |- "<<(((varchar*)(curr->ptr_children))->value)<<std::endl;
+                break;
+            }
+            default:{
+                break;
+            }
+        }
+        curr = curr->ptr_sibling;
+    }
+}

@@ -52,7 +52,12 @@ struct create_table:public AST{
     void print_table();
 };
 
+struct insert_stmt:public AST{
+    std::unique_ptr<AST> table_name;
+    AST* columns_to_insert;
+    AST* values;
 
-
+    void print_insert();
+};
 
 #endif

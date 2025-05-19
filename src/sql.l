@@ -60,6 +60,7 @@
 "DEFAULT"        { return TOKEN_DEFAULT; }
 "REFERENCES"     { return TOKEN_REFERENCES; }
 "EXISTS"         { return TOKEN_EXISTS; }
+"DROP"           { return TOKEN_DROP; }
 
  /* ---------- operators / punctuation ------------------------------------- */
 "<="             { return TOKEN_LE; }
