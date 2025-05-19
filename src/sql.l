@@ -2,6 +2,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include "include/ast.hpp"
+#include "include/datatypes.hpp"
 #include "sql.tab.hpp"        /* bison token/union definitions */
 
 #define YY_DECL int yylex (void)
@@ -65,8 +67,8 @@
 "<>"             { return TOKEN_NE; }
 "!="             { return TOKEN_NE; }
 
- /* single-character tokens */
-[=<>+\-*/(),.]   { return yytext[0]; }
+ /* single-character tokens */  
+[=<>+\-*/(),.;]   { return yytext[0]; }
 
  /* ---------- identifiers & literals -------------------------------------- */
 [A-Za-z_][A-Za-z0-9_]* {

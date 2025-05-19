@@ -36,7 +36,7 @@ std::unique_ptr<datatype> inttype::create_int() {
 
 /*---------------------------varchar--------------------------*/
 
-explicit varchar::varchar(size_t len) : maxlength(len) {}
+varchar::varchar(size_t len) : maxlength(len) {}
 
 type varchar::get_type(){
     return VARCHAR;

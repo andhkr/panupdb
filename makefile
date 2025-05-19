@@ -2,7 +2,7 @@ CXX = g++
 CXXFLAGS = -std=c++17 -Wall -I. -I$(BUILD_DIR)
 LEX = flex
 YACC = bison
-YFLAGS = -d -v
+YFLAGS = -d -v -Wcounterexamples
 
 # Target executable
 TARGET = sql_parser
@@ -21,7 +21,7 @@ PARSER_HPP = $(BUILD_DIR)/sql.tab.hpp
 LEXER_CPP = $(BUILD_DIR)/lex.yy.cpp
 
 # Source files
-SOURCES = $(SRC_DIR)/main.cpp
+SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/ast.cpp $(SRC_DIR)/datatypes.cpp
 GENERATED_SOURCES = $(PARSER_CPP) $(LEXER_CPP)
 
 # Object files
@@ -58,7 +58,6 @@ $(BUILD_DIR)/lex.yy.o: $(LEXER_CPP)
 # Generate parser from Bison grammar
 $(PARSER_CPP) $(PARSER_HPP): $(SRC_DIR)/sql.y
 	$(YACC) $(YFLAGS) -o $(PARSER_CPP) $<
-
 
 # Generate lexer from Flex specification
 $(LEXER_CPP): $(SRC_DIR)/sql.l $(PARSER_HPP)

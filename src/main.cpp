@@ -1,6 +1,8 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+#include "include/ast.hpp"
+#include "include/datatypes.hpp"
 #include "build/sql.tab.hpp"  // Bison-generated header
 
 // Flex function declarations

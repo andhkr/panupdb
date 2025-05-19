@@ -6,9 +6,6 @@
 #include <memory>
 #include <variant>
 
-// Define data types for SQL values
-using SQLValue = std::variant<int, double, std::string>;
-
 /*creating a abstract class for different dataypes handling*/
 
 enum type {
@@ -44,7 +41,7 @@ public:
 class inttype : public datatype {
 public:
     type get_type();
-
+    int value;
     std::string get_typename();
 
     size_t get_size();
@@ -66,6 +63,8 @@ class varchar : public datatype {
 private:
     size_t maxlength ;
 public:
+
+    std::string value;
 
     explicit varchar(size_t len);
     
