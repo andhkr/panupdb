@@ -6,6 +6,7 @@
 #include<vector>
 #include<memory>
 #include "datatypes.hpp"
+#include "constraints.hpp"
 
 struct AST{
     std::string identifier; /*select,insert,table_name,column_list,column_name*/
@@ -37,7 +38,7 @@ struct select_node:public AST{
 struct column_definition:public AST{
     std::string Column;
     std::unique_ptr<datatype> Type;
-    std::unique_ptr<AST> constraints;
+    std::unique_ptr<column_constraints> constraints;
 
     void print_column_def(int identation);
 };

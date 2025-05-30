@@ -8,7 +8,7 @@
 #include <memory>
 #include "include/ast.hpp"
 #include "include/datatypes.hpp"
-
+#include "include/query_processor.hpp"
 /* Forward declarations */
 void yyerror (const char *s);
 extern int  yylex (void);
@@ -31,6 +31,7 @@ extern int  yylex (void);
     create_table* create_tbl;
     datatype* dtype;
     insert_stmt* insert;
+    column_constraints* clmn_constrnt;
 }
 
 /* ----------------------------------------------------------------------------
@@ -53,7 +54,7 @@ extern int  yylex (void);
 %type <ast_node> select_item  select_list 
 %type <ast_node> table_name drop_table
 %type <ast_node> expression term  
-%type <ast_node> column_constraint column_constraint_list column_constraint_list_opt 
+%type <clmn_constrnt> column_constraint column_constraint_list column_constraint_list_opt 
 %type <create_tbl> create_statement 
 %type <colmn_def> column_definition column_definition_list
 %type <dtype> data_type default_value
@@ -84,7 +85,7 @@ sql_statement
     | insert_statement ';' {$1->print_insert();}
     | update_statement
     | delete_statement
-    | create_statement ';' {$1->print_table();}
+    | create_statement ';' {$1->print_table();process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
     ;
 
@@ -341,39 +342,37 @@ column_constraint_list_opt
 column_constraint_list
     : column_constraint { $$ = $1;}
     | column_constraint_list column_constraint {
-        AST* last = $1;
-        while (last->ptr_sibling != nullptr) {
-            last = last->ptr_sibling;
+        column_constraint* last = $1;
+        while (last->next != nullptr) {
+            last = last->next;
         }
-        last->ptr_sibling = $2;
+        last->next = $2;
         $$ = $1; 
     }
     ;
 
 column_constraint
     : NOT SQLNULL {
-        $$ = new AST("NOT NULL");
+        $$ = new not_null();
     }
-    | SQLNULL {
+    /* | SQLNULL {
         $$ = new AST("NULL");
-    }
+    } */
     | PRIMARY KEY {
-        $$ = new AST("PRIMARY KEY");
+        $$ = new primary_key();
     }
     | UNIQUE {
-        $$ = new AST("UNIQUE");
+        $$ = new unique_key();
     }
     | DEFAULT default_value {
-        AST* type = new AST("DEFAULT");
-        type->ptr_sibling = (AST*)$2;
-        $$ = type;
+        $$ = new default_value($2);
     }
-    | FOREIGN KEY REFERENCES table_name '(' IDENTIFIER ')' {
+    /* | FOREIGN KEY REFERENCES table_name '(' IDENTIFIER ')' {
         AST* type = new AST("FOREIGN KEY");
         type->ptr_children = $4;
         type->ptr_children->ptr_sibling = new AST(std::string($6)) ;
         $$ = type;
-    }
+    } */
     ;
 
 default_value

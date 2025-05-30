@@ -1,4 +1,5 @@
 #include "include/ast.hpp"
+#include <cstring>
 
 AST::AST(std::string id_name):identifier(id_name){}
 
@@ -73,9 +74,9 @@ void column_definition::print_column_def(int identation){
     std::cout<<"|- "<<this->Type->get_typename()<<std::endl;
     create_identention(identation);
     std::cout<<"constraints"<<std::endl;
-    if(this->constraints){
-        this->constraints->print_ast(identation+1);
-    }
+    // if(this->constraints){
+    //     this->constraints->print_ast(identation+1);
+    // }
 
 }
 

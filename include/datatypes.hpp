@@ -5,6 +5,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <cstring>
 
 /*creating a abstract class for different dataypes handling*/
 
@@ -34,8 +35,10 @@ public:
     virtual bool is_text(){return false;}
 
     // for storing in file and reading from file
-    virtual void serialise (std::ostream& out) = 0;
-    virtual void deserialise (std::istream& in) = 0;
+    virtual size_t serialise (char* buffer) = 0;
+    virtual size_t deserialise (const char* buffer) = 0;
+
+    virtual size_t get_total_object_size()=0;
 };
 
 class inttype : public datatype {
@@ -52,8 +55,10 @@ public:
     bool is_numeric();
 
     // for storing in file and reading from file
-    void serialise (std::ostream& out);
-    void deserialise (std::istream& in);
+    size_t serialise (char* buffer);
+    size_t deserialise (const char* buffer);
+
+    size_t get_total_object_size();
 
     // for parser
     static std::unique_ptr<datatype> create_int();
@@ -80,12 +85,15 @@ public:
     bool is_text();
 
     // for storing in file and reading from file
-    void serialise (std::ostream& out);
-    void deserialise (std::istream& in);   
+    size_t serialise (char* buffer);
+    size_t deserialise (const char* buffer);   
     
+    size_t get_total_object_size();
     // for parser
 
     static std::unique_ptr<datatype> create_varchar(size_t maxlen);
 };
 
+
+std::unique_ptr<datatype> get_polymorphic_obj(char* buffer);
 #endif
