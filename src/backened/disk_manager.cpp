@@ -1,5 +1,5 @@
-#include "include/disk_manager.hpp"
-
+#include "include/backened/disk_manager.hpp"
+#include "include/backened/catalog_manager.hpp"
 /*
 to perform all communication with disk
 */
@@ -111,30 +111,11 @@ cached_page* clock_page_replacer::evict_page(){
         }
     }
     if(clock_handle->dirty){
-        std::string filename = cat_man.file_id_filename_lookup[clock_handle->pid.file_id];
+        std::string filename = catlg_man.file_id_filename_lookup[clock_handle->pid.file_id];
         disk_manager disk_man(filename);
         disk_man.write(clock_handle->pid.page_id,clock_handle->_c_page);
         disk_man.close_file();
     }        
-    return clock_handle;
-}
-
-cached_page* clock_page_replacer::evict_page(){
-    while(clock_handle->referenced){
-        clock_handle->referenced = false;
-        if(!clock_handle->next){
-            clock_handle = page_list_head;
-        }else{
-            clock_handle = clock_handle->next;
-        }
-    }
-    if(clock_handle->dirty){
-        std::string filename = cat_man.file_id_filename_lookup[clock_handle->pid.file_id];
-        disk_manager disk_man(filename);
-        disk_man.write(clock_handle->pid.page_id,clock_handle->_c_page);
-        disk_man.close_file();
-    }
-    clock_handle = clock_handle->next;        
     return clock_handle;
 }
 
@@ -150,7 +131,7 @@ page_cache_manager::page_cache_manager(){
 cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
     if(page_lookup.find({file_id,page_id}) == page_lookup.end()){
         /*pid have table id and page id*/
-        std::string filename = cat_man.file_id_filename_lookup[file_id];
+        std::string filename = catlg_man.file_id_filename_lookup[file_id];
         disk_manager disk_man(filename);
         cached_page* page_location_in_cache = page_replacer.cache_in(file_id,page_id);
         disk_man.read(page_id,page_location_in_cache->_c_page);

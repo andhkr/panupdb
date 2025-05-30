@@ -68,13 +68,27 @@ bool varchar::is_text() {return true;}
 // for storing in file and reading from file
 size_t varchar::serialise (char* buffer){
     type type_id = VARCHAR;
+    size_t offset = 0;
     memcpy(buffer,&type_id,sizeof(type));
-    memcpy(buffer+sizeof(type),&value,sizeof(value));
-    return sizeof(type) + sizeof(value);
+    offset += sizeof(type);
+    memcpy(buffer,&maxlength,sizeof(maxlength));
+    buffer += sizeof(maxlength);
+    size_t size = value.size();
+    memcpy(buffer+offset,&size,sizeof(size));
+    offset+= sizeof(size);
+    memcpy(buffer+offset,value.data(),size);
+    offset += size;
+    return offset;
 }
 size_t varchar::deserialise (const char* buffer){
-    memcpy(&value,buffer+sizeof(type),sizeof(value));
-    return sizeof(value);
+    size_t size = 0;
+    size_t offset = sizeof(type);
+    memcpy(&size,buffer+offset,sizeof(size));
+    offset += sizeof(size);
+    value.resize(size);
+    memcpy(&value[0],buffer+offset,size);
+    offset += size;
+    return offset;
 }   
 
 size_t varchar::get_total_object_size(){

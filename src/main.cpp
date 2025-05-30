@@ -21,6 +21,7 @@ int main(int argc, char** argv) {
         if (query == "\\exit") {
             break;
         }
+        if(query == "\\d ")
 
         // Pass the string to lexer/parser
         yy_scan_string(query.c_str());   // Let Flex scan the input string

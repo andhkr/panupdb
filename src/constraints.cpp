@@ -1,11 +1,10 @@
 #include "include/constraints.hpp"
 
-
 constraint_type primary_key::constrt_type(){
     return PRIMARY_KEY;
 }
 
-std::string get_constrt_name(){
+std::string primary_key::get_constrt_name(){
     return "Primary Key";
 }
 
@@ -34,7 +33,7 @@ constraint_type not_null::constrt_type(){
     return NOT_NULL;
 }
 
-std::string get_constrt_name(){
+std::string not_null::get_constrt_name(){
     return "NOT NULL";
 }
 
@@ -65,7 +64,7 @@ constraint_type default_value::constrt_type(){
     return DEFAULT_VALUE;
 }
 
-std::string get_constrt_name(){
+std::string default_value::get_constrt_name(){
     return "default";
 }
 

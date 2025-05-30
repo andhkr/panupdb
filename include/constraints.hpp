@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CONSTRAINTS_HPP
+#define CONSTRAINTS_HPP
 
 #include <iostream>
 #include <cstring>
@@ -94,3 +95,9 @@ struct default_value : public column_constraints {
 
     size_t get_total_sizeof_object();
 };
+
+struct table_specific_constraints{
+
+};
+
+#endif

@@ -71,6 +71,7 @@ public:
 
     std::string value;
 
+    varchar()=default;
     explicit varchar(size_t len);
     
     type get_type();

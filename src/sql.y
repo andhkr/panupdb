@@ -85,7 +85,7 @@ sql_statement
     | insert_statement ';' {$1->print_insert();}
     | update_statement
     | delete_statement
-    | create_statement ';' {$1->print_table();process_create_table($1);}
+    | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
     ;
 
@@ -342,11 +342,11 @@ column_constraint_list_opt
 column_constraint_list
     : column_constraint { $$ = $1;}
     | column_constraint_list column_constraint {
-        column_constraint* last = $1;
-        while (last->next != nullptr) {
-            last = last->next;
+        column_constraints* last = $1;
+        while (last->next_constraint != nullptr) {
+            last = last->next_constraint;
         }
-        last->next = $2;
+        last->next_constraint = $2;
         $$ = $1; 
     }
     ;
@@ -361,9 +361,9 @@ column_constraint
     | PRIMARY KEY {
         $$ = new primary_key();
     }
-    | UNIQUE {
+    /* | UNIQUE {
         $$ = new unique_key();
-    }
+    } */
     | DEFAULT default_value {
         $$ = new default_value($2);
     }

@@ -21,15 +21,18 @@ PARSER_HPP = $(BUILD_DIR)/sql.tab.hpp
 LEXER_CPP = $(BUILD_DIR)/lex.yy.cpp
 
 # Source files
-SOURCES = $(SRC_DIR)/main.cpp $(SRC_DIR)/ast.cpp $(SRC_DIR)/datatypes.cpp
+SOURCES = $(wildcard $(SRC_DIR)/*.cpp) 
+SOURCES += $(wildcard $(SRC_DIR)/backened/*.cpp)
 GENERATED_SOURCES = $(PARSER_CPP) $(LEXER_CPP)
 
-# Object files
-OBJECTS = $(SOURCES:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
+# Object files - create properly substituted object file names
+OBJECTS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(filter $(SRC_DIR)/%.cpp,$(SOURCES)))
+OBJECTS += $(patsubst $(SRC_DIR)/backened/%.cpp,$(BUILD_DIR)/backened/%.o,$(filter $(SRC_DIR)/backened/%.cpp,$(SOURCES)))
 GENERATED_OBJECTS = $(GENERATED_SOURCES:$(BUILD_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 
 # Ensure build and bin directories exist
 $(shell mkdir -p $(BUILD_DIR))
+$(shell mkdir -p $(BUILD_DIR)/backened)
 $(shell mkdir -p $(BIN_DIR))
 
 # Default target
@@ -43,8 +46,12 @@ $(BIN_DIR)/$(TARGET): $(OBJECTS) $(GENERATED_OBJECTS)
 $(BUILD_DIR)/main.o: $(SRC_DIR)/main.cpp $(PARSER_HPP)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile other source files
+# Compile source files from src directory
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Compile source files from src/backened directory
+$(BUILD_DIR)/backened/%.o: $(SRC_DIR)/backened/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Compile generated parser

@@ -10,7 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <unordered_map>
-#include "include/page.hpp"
+#include "page.hpp"
 #include <functional>  // for std::hash
 
 
@@ -80,17 +80,13 @@ struct cached_page{
     bool referenced; /*recently used*/ 
 };
 
-struct catalog_manager{
-    /*lookup for file_id and  corresponding disk file name*/
-    std::unordered_map<uint,std::string> file_id_filename_lookup;
-};
-
-extern catalog_manager cat_man;
+struct catalog_manager;
+extern catalog_manager catlg_man;
 
 /*page replacement policy --> clock sweep algorithm*/
 struct clock_page_replacer{
     char * buffer_pool;
-    bool count_page = 0;
+    int count_page = 0;
     cached_page* page_list_head = nullptr;
     cached_page* page_list_tail = nullptr;
     cached_page* clock_handle = nullptr;
@@ -102,9 +98,6 @@ struct clock_page_replacer{
     cached_page* cache_in(uint file_id,uint page_id);
 
     cached_page* evict_page();
-
-    cached_page* evict_page();
-
 };
 
 struct page_cache_manager{
