@@ -14,10 +14,7 @@
 /*
 database will have list of tables 
 */
-struct database{
-    std::string database_name;
-    std::unordered_map<std::string,table*> table_list;
-};
+extern std::unordered_map<uint,std::string> file_id_filename_lookup;
 
 struct catalog_file_header{ /*for file_id and file_name lookup*/
     uint32_t magic_number;
@@ -26,19 +23,20 @@ struct catalog_file_header{ /*for file_id and file_name lookup*/
     uint columns_ct; /* how many column in a table*/
     uint cat_id;
 
-    catalog_file_header()=default;
+    catalog_file_header();
     catalog_file_header(uint cat_id);
 
-    void serialise(char* buffer);
+    size_t serialise(char* buffer);
 
-    void deserialise(const char* buffer);
+    size_t deserialise(const char* buffer);
 
     size_t get_total_object_size();
 };
 
-struct id_name{
-    uint file_id;
-    std::string file_name;
+enum file_type{
+    INDEX,
+    CATALOG,
+    DATA
 };
 
 /*
@@ -47,18 +45,17 @@ page_id will be increasing order and incresed by 1
 */
 struct catalog_manager{
     std::string database_name;
-    /*lookup for file_id and  corresponding disk file name*/
-    std::unordered_map<uint,std::string> file_id_filename_lookup;
     page_cache_manager buffer_pool_manager;
-    catalog_file_header cat_file_head;
     /*file_id*/
-    uint file_id ;
+    uint file_id = 0;
+    std::unordered_map<std::string,table*> catalog_file_list;
+    std::unordered_map<std::string,table*> index_file_root_list;
 
-    std::unordered_map<std::string,table*> table_list;
     /*load the file_id_filename_lookup hash table*/
     /*i am giving this file a special name id_name.cat*/
     catalog_manager();
-
+    uint get_file_id();
+    
     void load_file_lookup();
 
     /*it will table object initialised by query executor then catalog manager
@@ -66,12 +63,11 @@ struct catalog_manager{
     (file for data of table) and initilaise that header*/
     void create_table(table* obj);
 
-    uint get_file_id();
+    void load_catalog_file(uint file_id,std::string& table_name);
 
-    // void write_file_lookup();
+    void write_file_lookup();
 
     void database_query(std::string& cmd);
-
 };
 
 #endif

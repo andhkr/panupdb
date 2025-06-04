@@ -8,6 +8,8 @@
 #include "datatypes.hpp"
 #include "constraints.hpp"
 
+extern std::string database_path;
+
 struct AST{
     std::string identifier; /*select,insert,table_name,column_list,column_name*/
     AST* ptr_children=nullptr;

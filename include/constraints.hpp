@@ -96,6 +96,7 @@ struct default_value : public column_constraints {
     size_t get_total_sizeof_object();
 };
 
+column_constraints* get_polymorphic_constraints(const char* buffer);
 struct table_specific_constraints{
 
 };

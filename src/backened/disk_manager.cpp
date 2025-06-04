@@ -1,5 +1,6 @@
 #include "include/backened/disk_manager.hpp"
-#include "include/backened/catalog_manager.hpp"
+#include <filesystem>
+
 /*
 to perform all communication with disk
 */
@@ -35,13 +36,16 @@ void padbm::to_native_endian(char* start,size_t size){
     }
 }
 
-disk_manager::disk_manager(std::string& file_name){
-    file_name = file_name;
-    fd = open(file_name.c_str(),O_RDWR | O_CREAT | O_DIRECT ,0666);
-    if(fd == -1){
+disk_manager::disk_manager(std::string& file_path){
+    this->file_name = file_path;
+    // 2. Open file using O_DIRECT
+    fd = open(file_path.c_str(), O_RDWR | O_CREAT | O_DIRECT, 0666);
+    if (fd == -1) {
         perror("open failed");
-        throw std::runtime_error("failed to open file");
+        throw std::runtime_error("Failed to open or create file with O_DIRECT: " + file_path);
     }
+
+    // std::cout << "Opened file with O_DIRECT: " << full_path << "\n";
 }
 
 disk_manager::~disk_manager(){
@@ -52,6 +56,9 @@ void disk_manager::read(uint page_id,char* buffer){
     std::memset(buffer,0,page_size);
     size_t offset = page_id*page_size;
     ssize_t bytes = pread(fd,buffer,page_size,offset);
+    if(bytes == 0){
+        std::cout<<"page id "<< page_id << "not available"<<std::endl;
+    }
     /*error check to implemented*/
     if(bytes<0){
         throw std::runtime_error(std::strerror(errno));
@@ -61,13 +68,21 @@ void disk_manager::read(uint page_id,char* buffer){
 void disk_manager::write(uint page_id,const char* buffer){
     size_t offset = page_id*page_size;
     ssize_t bytes = pwrite(fd,buffer,page_size,offset);
+    /*error check to implemented*/
+    if(bytes<0){
+        throw std::runtime_error(std::strerror(errno));
+    }
 }
 
 void disk_manager::close_file(){
     if(fd != -1)close(fd);
 }
+cached_page_id::cached_page_id():file_id(0),page_id(0){}
 
 cached_page_id::cached_page_id(uint file_id,uint page_id):file_id(file_id),page_id(page_id){}
+
+/*for already present page*/
+std::unordered_map<cached_page_id,cached_page*> page_lookup;
 
 /*page replacement policy --> clock sweep algorithm*/
 
@@ -104,6 +119,9 @@ cached_page* clock_page_replacer::cache_in(uint file_id,uint page_id){
 cached_page* clock_page_replacer::evict_page(){
     while(clock_handle->referenced){
         clock_handle->referenced = false;
+        if(clock_handle->pin_unpin){
+            clock_handle->referenced = true;
+        }
         if(!clock_handle->next){
             clock_handle = page_list_head;
         }else{
@@ -111,11 +129,16 @@ cached_page* clock_page_replacer::evict_page(){
         }
     }
     if(clock_handle->dirty){
-        std::string filename = catlg_man.file_id_filename_lookup[clock_handle->pid.file_id];
+        std::string filename = file_id_filename_lookup[clock_handle->pid.file_id];
         disk_manager disk_man(filename);
         disk_man.write(clock_handle->pid.page_id,clock_handle->_c_page);
         disk_man.close_file();
-    }        
+        /*evicting from lookup also*/
+        std::cout<<"evicting:"<<clock_handle->pid.file_id<<std::endl;
+        page_lookup.erase(clock_handle->pid);
+    } 
+    std::cout<<"replacer has replace these things"<< clock_handle->pid.file_id <<    clock_handle->pid.page_id <<std::endl;
+    std::cout<<clock_handle->dirty<<std::endl;    
     return clock_handle;
 }
 
@@ -131,7 +154,8 @@ page_cache_manager::page_cache_manager(){
 cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
     if(page_lookup.find({file_id,page_id}) == page_lookup.end()){
         /*pid have table id and page id*/
-        std::string filename = catlg_man.file_id_filename_lookup[file_id];
+        std::string filename = file_id_filename_lookup[file_id];
+        std::cout<<filename<<" kya nup "<<page_id<<std::endl;
         disk_manager disk_man(filename);
         cached_page* page_location_in_cache = page_replacer.cache_in(file_id,page_id);
         disk_man.read(page_id,page_location_in_cache->_c_page);
@@ -145,4 +169,17 @@ cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
     }
 }
 
+void page_cache_manager::flush_all_pages(){
+    for(auto& page:page_lookup){
+        
+        cached_page* c_page = page.second;
+        if(!c_page->dirty) continue;
+        std::string filename = file_id_filename_lookup[page.first.file_id];
+        disk_manager disk_man(filename);
+        std::cout<<"page id " <<page.first.page_id<<" of "<<filename<<" is flushed"<<std::endl;
+        std::cout<<c_page->pid.page_id<<std::endl;
+        disk_man.write(c_page->pid.page_id,c_page->_c_page);
+        disk_man.close_file();
+    }
+}
 

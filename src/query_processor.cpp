@@ -17,6 +17,6 @@ void query_processor::process_create_table(create_table* obj){
     tbl->columns = columns;
     tbl->column_cts = ct;
 
-    catlg_man.create_table(tbl);
+    catlg_man->create_table(tbl);
     return;
 }

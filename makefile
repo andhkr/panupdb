@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -I. -I$(BUILD_DIR)
+CXXFLAGS = -std=c++17 -Wall -I. -I$(BUILD_DIR) -g
 LEX = flex
 YACC = bison
 YFLAGS = -d -v -Wcounterexamples
@@ -14,6 +14,7 @@ INC_DIR = include
 # Output directories
 BUILD_DIR = build
 BIN_DIR = bin
+DATABASE = databases
 
 # Output paths
 PARSER_CPP = $(BUILD_DIR)/sql.tab.cpp
@@ -34,6 +35,7 @@ GENERATED_OBJECTS = $(GENERATED_SOURCES:$(BUILD_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 $(shell mkdir -p $(BUILD_DIR))
 $(shell mkdir -p $(BUILD_DIR)/backened)
 $(shell mkdir -p $(BIN_DIR))
+$(shell mkdir -p $(DATABASE))
 
 # Default target
 all: $(BIN_DIR)/$(TARGET)

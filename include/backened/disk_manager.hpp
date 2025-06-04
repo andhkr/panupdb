@@ -13,7 +13,7 @@
 #include "page.hpp"
 #include <functional>  // for std::hash
 
-
+extern std::unordered_map<uint,std::string> file_id_filename_lookup;
 /*
 to perform all communication with disk
 */
@@ -52,7 +52,7 @@ private:
 struct cached_page_id{
     uint file_id;
     uint page_id;
-    cached_page_id()=default;
+    cached_page_id();
     cached_page_id(uint file_id,uint page_id);
     bool operator==(const cached_page_id& other) const {
         return file_id == other.file_id && page_id == other.page_id;
@@ -75,17 +75,15 @@ namespace std {
 struct cached_page{
     char _c_page[page_size]; /*cached page*/
     cached_page_id pid;
-    bool dirty; /*is_modified*/
-    cached_page* next; /*pointer to next cached page*/
-    bool referenced; /*recently used*/ 
+    bool dirty=false; /*is_modified*/
+    cached_page* next=nullptr; /*pointer to next cached page*/
+    bool referenced=false; /*recently used*/ 
+    bool pin_unpin = false;/*currently in use by a component or not*/
 };
-
-struct catalog_manager;
-extern catalog_manager catlg_man;
 
 /*page replacement policy --> clock sweep algorithm*/
 struct clock_page_replacer{
-    char * buffer_pool;
+    char * buffer_pool=nullptr;
     int count_page = 0;
     cached_page* page_list_head = nullptr;
     cached_page* page_list_tail = nullptr;
@@ -102,12 +100,13 @@ struct clock_page_replacer{
 
 struct page_cache_manager{
     void* cache_buffer = nullptr;
-    std::unordered_map<cached_page_id,cached_page*> page_lookup;
     clock_page_replacer page_replacer;
 
     page_cache_manager();
 
     cached_page* get_page(uint file_id,uint page_id);
+
+    void flush_all_pages();
 };
 
 #endif

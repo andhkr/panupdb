@@ -77,14 +77,39 @@ size_t default_value::serialise(char* buffer){
     constraint_type type = DEFAULT_VALUE;
     memcpy(buffer,&type,sizeof(constraint_type));
     size_t written_bytes = value->serialise(buffer+sizeof(type));
+    std::cout<<"default "<<written_bytes<<std::endl;
     return written_bytes+sizeof(type);
 }
 
 size_t default_value::deserialise(const char* buffer){
-    memcpy(&value,buffer+sizeof(type),sizeof(value));
-    return sizeof(value);
+    value = get_polymorphic_obj(buffer+sizeof(constraint_type));
+    return value->get_total_object_size();
 }
 
 size_t default_value::get_total_sizeof_object(){
     return sizeof(type)+value->get_total_object_size();
+}
+
+column_constraints* get_polymorphic_constraints(const char* buffer){
+    constraint_type type;
+    memcpy(&type,buffer,sizeof(type));
+    column_constraints* poly_obj = nullptr;
+    switch(type){
+        case PRIMARY_KEY:{
+            poly_obj = new primary_key;
+            break;
+        }
+        case NOT_NULL:{
+            poly_obj = new not_null;
+            break;
+        }
+        case DEFAULT_VALUE:{
+            poly_obj = new default_value;
+            break;
+        }default:{
+            break;
+        }
+    }
+    poly_obj->deserialise(buffer);
+    return poly_obj;
 }

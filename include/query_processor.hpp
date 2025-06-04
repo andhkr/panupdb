@@ -13,5 +13,5 @@ struct query_processor{
 };
 
 extern query_processor query_executor;
-extern catalog_manager catlg_man;
+extern catalog_manager* catlg_man;
 #endif

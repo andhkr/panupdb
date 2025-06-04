@@ -44,7 +44,7 @@ public:
 class inttype : public datatype {
 public:
     type get_type();
-    int value;
+    int value=0;
     std::string get_typename();
 
     size_t get_size();
@@ -66,10 +66,10 @@ public:
 
 class varchar : public datatype {
 private:
-    size_t maxlength ;
+    size_t maxlength = 0;
 public:
 
-    std::string value;
+    std::string value{};
 
     varchar()=default;
     explicit varchar(size_t len);
@@ -96,5 +96,5 @@ public:
 };
 
 
-std::unique_ptr<datatype> get_polymorphic_obj(char* buffer);
+datatype* get_polymorphic_obj(const char* buffer);
 #endif

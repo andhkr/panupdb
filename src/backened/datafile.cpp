@@ -1,5 +1,8 @@
 #include "include/backened/datafile.hpp"
 
+datafile_header::datafile_header():magic_number(Magic_Number::DATA),page_counts(0),
+row_counts(0),free_page_list(page_size),table_id(0),table_name(""){}
+
 datafile_header::datafile_header(uint table_id,std::string& table_name){
     magic_number = Magic_Number::DATA;
     page_counts = 0;
@@ -9,11 +12,13 @@ datafile_header::datafile_header(uint table_id,std::string& table_name){
     this->table_name = table_name;
 }
 
-void datafile_header::serialise(char* buffer){
+size_t datafile_header::serialise(char* buffer){
 
+    size_t offset = 0;
     auto write = [&](void* src,size_t size){
-        memcpy(buffer,src,size);
-        buffer += size;
+        memcpy(buffer+offset,src,size);
+     
+        offset += size;
     };
 
     write(&magic_number,sizeof(magic_number));
@@ -25,9 +30,11 @@ void datafile_header::serialise(char* buffer){
     size_t size = table_name.size();
     write(&size,sizeof(size));
     write(table_name.data(),size);
+    return offset;
 }
 
-void datafile_header::deserialise(const char * buffer){
+
+size_t datafile_header::deserialise(const char * buffer){
     size_t offset = 0;
     auto read = [&](void* dest,size_t size){
         memcpy(dest,buffer+offset,size);
@@ -44,4 +51,5 @@ void datafile_header::deserialise(const char * buffer){
     read(&size,sizeof(size));
     table_name.resize(size);
     read(&table_name[0],size);
+    return offset;
 }
