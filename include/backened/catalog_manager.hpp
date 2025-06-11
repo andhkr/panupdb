@@ -11,6 +11,8 @@
 #include "pandupdb_entity.hpp"
 #include "datafile.hpp"
 #include <unordered_map>
+#include "free_space_manager.hpp"
+
 /*
 database will have list of tables 
 */
@@ -22,6 +24,7 @@ struct catalog_file_header{ /*for file_id and file_name lookup*/
     size_t free_page_list;
     uint columns_ct; /* how many column in a table*/
     uint cat_id;
+    uint relation_id = 0; /* table id */
 
     catalog_file_header();
     catalog_file_header(uint cat_id);
@@ -36,7 +39,8 @@ struct catalog_file_header{ /*for file_id and file_name lookup*/
 enum file_type{
     INDEX,
     CATALOG,
-    DATA
+    DATA,
+    FREE_SPACE,
 };
 
 /*
@@ -47,9 +51,10 @@ struct catalog_manager{
     std::string database_name;
     page_cache_manager buffer_pool_manager;
     /*file_id*/
-    uint file_id = 0;
+    uint file_id = 1;
     std::unordered_map<std::string,table*> catalog_file_list;
     std::unordered_map<std::string,table*> index_file_root_list;
+    free_space_manager FSM;
 
     /*load the file_id_filename_lookup hash table*/
     /*i am giving this file a special name id_name.cat*/
@@ -57,6 +62,7 @@ struct catalog_manager{
     uint get_file_id();
     
     void load_file_lookup();
+    void load_file_FSM(uint file_id,std::string& fsm_table_name);
 
     /*it will table object initialised by query executor then catalog manager
     will create metadata file for this and write relevant data and then create datafile
@@ -67,7 +73,17 @@ struct catalog_manager{
 
     void write_file_lookup();
 
-    void database_query(std::string& cmd);
+    // void database_query(std::string& cmd);
+
+    void write_tuple_to_table(table*,std::vector<datatype*>&,std::vector<bool>&);
+
+    size_t serialise_nullbitmap(char* buffer,std::vector<bool>& nullbitmap);
+
+    std::vector<bool> deserialise_nullbitmap(const char* buffer);
+
+    void read_table(table* tbl);
+
+    void write_FSM_files();
 };
 
 #endif

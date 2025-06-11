@@ -5,7 +5,7 @@ row_counts(0),free_page_list(page_size),table_id(0),table_name(""){}
 
 datafile_header::datafile_header(uint table_id,std::string& table_name){
     magic_number = Magic_Number::DATA;
-    page_counts = 0;
+    page_counts = 1;
     row_counts = 0;
     free_page_list = page_size;
     this->table_id = table_id;

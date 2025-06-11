@@ -77,7 +77,6 @@ size_t default_value::serialise(char* buffer){
     constraint_type type = DEFAULT_VALUE;
     memcpy(buffer,&type,sizeof(constraint_type));
     size_t written_bytes = value->serialise(buffer+sizeof(type));
-    std::cout<<"default "<<written_bytes<<std::endl;
     return written_bytes+sizeof(type);
 }
 

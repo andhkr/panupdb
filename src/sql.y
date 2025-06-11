@@ -81,8 +81,8 @@ query
         ;
 
 sql_statement
-    : select_statement ';'{$1->print_select();}
-    | insert_statement ';' {$1->print_insert();}
+    : select_statement ';'{$1->print_select();query_executor.process_select_stmt($1);}
+    | insert_statement ';' {$1->print_insert();query_executor.process_insert_stmt($1);}
     | update_statement
     | delete_statement
     | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
@@ -469,7 +469,7 @@ expression
 
 term
     : IDENTIFIER   {
-        $$ = new AST(std::string($1)) ;;
+        $$ = new AST(std::string($1)) ;
     }
     | table_name '.' IDENTIFIER {}
     | INTEGER_LITERAL {

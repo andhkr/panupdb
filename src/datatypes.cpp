@@ -96,7 +96,6 @@ size_t varchar::deserialise (const char* buffer){
 
 size_t varchar::get_total_object_size(){
     size_t total = sizeof(type) + 2*sizeof(size_t) + value.size();
-    std::cout<<total<<std::endl;
     return total;
 }
 

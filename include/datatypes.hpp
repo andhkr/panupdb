@@ -97,4 +97,6 @@ public:
 
 
 datatype* get_polymorphic_obj(const char* buffer);
+
+
 #endif

@@ -9,7 +9,7 @@ struct datafile_header{
     uint32_t magic_number=0; /* for file type, here for datafile: PaDBM */
     uint page_counts=0;
     uint row_counts=0;
-    size_t free_page_list=0;
+    size_t free_page_list=1;
     uint table_id=0;
     /*schema of table i.e column sequence*/
     std::string table_name{};

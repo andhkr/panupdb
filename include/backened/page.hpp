@@ -2,10 +2,13 @@
 #define PAGE_HPP
 
 #include <iostream>
-#include <unordered_map>
+#include <cstring>
+
+#define file_id_lookup 0
+#define file_id_PFFS 1
 
 constexpr size_t page_size  = 512;
-constexpr uint max_count_of_page_in_cache = 5;
+constexpr uint max_count_of_page_in_cache = 10;
 constexpr size_t database_cache_size =  (max_count_of_page_in_cache<<1)*page_size;
 
 struct page_header{
@@ -20,7 +23,11 @@ struct page_header{
     bool dead_page = false ; /*that is this page is deleted*/
     size_t next_free_page;
     size_t curr_offset ; /*end of slot array*/
-    size_t start_offset ; /*pointer of starting region of slot array*/
+    size_t start_offset ; /*pointer of starting region of slot array*/   
+    size_t next_page;     
+    size_t free_space;
+    size_t deleted_space;
+
     page_header();
     page_header(uint p_id);
 
@@ -34,8 +41,12 @@ struct page_header{
 struct slot{
     size_t row_offset;
     size_t size_of_row_data;
+    size_t next_slot;
+    size_t prev_slot;
+
     slot();
     slot(size_t,size_t);
+    slot(size_t,size_t,size_t);
 
     size_t serialise(char* buffer);
     size_t deserialise(const char* buffer);

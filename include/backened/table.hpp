@@ -4,6 +4,8 @@
 #include "../ast.hpp"
 #include <unordered_map>
 
+struct table;
+
 struct id_name{
     uint file_id=0;
     std::string file_name{};
@@ -37,6 +39,8 @@ struct table_column{
     size_t deserialise(const char* buffer);
 
     size_t get_total_sizeof_object();
+ 
+    void check_constraints(datatype*,table*);
 };
 
 struct table{
@@ -46,8 +50,19 @@ struct table{
     /*used by query planar*/
     std::vector<std::vector<std::string>> columns_have_index{};
     uint column_cts;
+    uint table_id = 0; /*datafile id*/
 
+    /*small size table data*/
+    std::vector<std::vector<datatype*>> tuples;
+    
     void print();
+
+    table_column* get_column_by_name(std::string&);
+
+    int index_of_col(std::string&);
+
+    void print_tuples();
+
 };
 
 #endif

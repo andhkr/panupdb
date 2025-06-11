@@ -1,6 +1,7 @@
 #include "include/backened/table.hpp"
 #include "include/datatypes.hpp"
 #include "iomanip"
+#include "include/query_processor.hpp"
 
 table_column::table_column(column_definition* obj){
     column_name = obj->Column;
@@ -118,6 +119,15 @@ size_t table_column::get_total_sizeof_object(){
     total += sizeof(total_constraints);
     return total_object_size = total;
 }
+
+void table_column::check_constraints(datatype* col_value,table* tbl){
+    column_constraints* curr_constrnt = constraints;
+    while(curr_constrnt){
+        curr_constrnt->validate(col_value,tbl);
+        curr_constrnt = curr_constrnt->next_constraint;
+    }
+}
+
 #include <iomanip>  // for std::setw
 
 void table::print() {
@@ -204,3 +214,125 @@ size_t id_name::deserialise(const char* buffer){
 size_t id_name::get_total_sizeof_object(){
     return sizeof(file_id) + sizeof(size_t) + file_name.size();
 }
+
+table_column* table::get_column_by_name(std::string& col_name){
+    for(auto& col : columns){
+        if(col->column_name == col_name){
+            return col;
+        }
+    }
+    fprintf(stderr,"Error: In Table %s Column %s not exists\n",table_name.c_str(),col_name.c_str());
+    exit(EXIT_FAILURE);
+}
+
+int table::index_of_col(std::string& col_name){
+    for(uint i = 0;i<column_cts;++i){
+        if(columns[i]->column_name == col_name) return i;
+    }
+    return -1;
+}
+
+#include <iomanip>   // for std::setw, std::left
+#include <algorithm> // for std::max
+#include <sstream>   // for std::ostringstream
+
+#include <iomanip>
+#include <algorithm>
+#include <sstream>
+
+void table::print_tuples() {
+    // 1) Compute column widths
+    if(tuples.size()==0) catlg_man->read_table(this);
+
+    std::vector<size_t> col_widths(column_cts);
+    for (uint c = 0; c < column_cts; ++c)
+        col_widths[c] = columns[c]->column_name.size();
+
+    for (auto& t : tuples) {
+        for (uint c = 0; c < column_cts; ++c) {
+            std::string cell;
+            if (t[c]) {
+                switch (t[c]->get_type()) {
+                    case INT:
+                        cell = std::to_string(static_cast<inttype*>(t[c])->value);
+                        break;
+                    case VARCHAR:
+                        cell = static_cast<varchar*>(t[c])->value;
+                        break;
+                    default:
+                        cell = "?";
+                }
+            } else {
+                cell = "NULL";
+            }
+            col_widths[c] = std::max(col_widths[c], cell.size());
+        }
+    }
+
+    // 2) Build border lines
+    auto make_border = [&](char left, char mid, char fill, char right) {
+        std::ostringstream o;
+        o << left;
+        for (uint c = 0; c < column_cts; ++c) {
+            o << std::string(col_widths[c] + 2, fill);
+            o << (c + 1 < column_cts ? std::string(1, mid) : std::string(1, right));
+        }
+        return o.str();
+    };
+
+    std::string top_border    = make_border('+', '+', '-', '+');
+    std::string header_border = make_border('+', '+', '=', '+');
+    std::string mid_border    = make_border('+', '+', '-', '+');
+    std::string bot_border    = make_border('+', '+', '-', '+');
+
+    // 3) Print top border
+    std::cout << top_border << "\n";
+
+    // 4) Print header row
+    std::cout << "|";
+    for (uint c = 0; c < column_cts; ++c) {
+        std::cout << " " 
+                  << std::left << std::setw(col_widths[c]) 
+                  << columns[c]->column_name 
+                  << " |";
+    }
+    std::cout << "\n";
+
+    // 5) Header/body separator
+    std::cout << header_border << "\n";
+
+    // 6) Print each data row with mid-row border
+    for (auto& t : tuples) {
+        std::cout << "|";
+        for (uint c = 0; c < column_cts; ++c) {
+            std::string cell;
+            if (t[c]) {
+                switch (t[c]->get_type()) {
+                    case INT:
+                        cell = std::to_string(static_cast<inttype*>(t[c])->value);
+                        break;
+                    case VARCHAR:
+                        cell = static_cast<varchar*>(t[c])->value;
+                        break;
+                    default:
+                        cell = "?";
+                }
+            } else {
+                cell = "NULL";
+            }
+            std::cout << " " 
+                      << std::left << std::setw(col_widths[c]) 
+                      << cell
+                      << " |";
+        }
+        std::cout << "\n";
+        // <-- mid-row border between every row:
+        std::cout << mid_border << "\n";
+    }
+
+    // 7) Print bottom border
+    std::cout << bot_border << "\n";
+}
+
+
+

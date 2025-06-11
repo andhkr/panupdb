@@ -12,6 +12,9 @@ page_header::page_header()
     next_free_page = 0;
     curr_offset  = get_sizeof_object();
     start_offset = get_sizeof_object();
+    next_page = 0;
+    free_space = page_size-curr_offset;
+    deleted_space = 0;
 }
 
 page_header::page_header(uint p_id)
@@ -25,6 +28,9 @@ page_header::page_header(uint p_id)
     next_free_page = 0;
     curr_offset  = get_sizeof_object();
     start_offset = get_sizeof_object();
+    next_page = 0;
+    free_space = page_size-curr_offset;
+    deleted_space = 0;
 }
 
 size_t page_header::serialise(char* buffer){
@@ -47,6 +53,10 @@ size_t page_header::serialise(char* buffer){
     write(&next_free_page,sizeof(next_free_page));
     write(&curr_offset,sizeof(curr_offset));
     write(&start_offset,sizeof(start_offset));
+    write(&next_page,sizeof(next_page));
+    write(&free_space,sizeof(free_space));
+    write(&deleted_space,sizeof(deleted_space));
+
     return offset;
 }
 
@@ -66,6 +76,9 @@ size_t page_header::deserialise(const char* buffer){
     read(&next_free_page,sizeof(next_free_page));
     read(&curr_offset,sizeof(curr_offset));
     read(&start_offset,sizeof(start_offset));
+    read(&next_page,sizeof(next_page));
+    read(&free_space,sizeof(free_space));
+    read(&deleted_space,sizeof(deleted_space));
     return offset;
 }
 
@@ -83,14 +96,24 @@ size_t page_header::get_sizeof_object(){
     offset += sizeof(size_t);
     offset += sizeof(size_t); /*end of slot array*/
     offset += sizeof(size_t);
+    offset += sizeof(size_t);
+    offset += sizeof(free_space);
+    offset += sizeof(deleted_space);
+
     return offset;
 }
 
-slot::slot():row_offset(page_size),size_of_row_data(page_size){}
+slot::slot():row_offset(page_size),size_of_row_data(page_size),next_slot(16),prev_slot(16){}
 
 slot::slot(size_t offset,size_t data_size){
     this->row_offset = offset;
     this->size_of_row_data = data_size;
+}
+
+slot::slot(size_t offset,size_t data_size,size_t next_slot){
+    this->row_offset = offset;
+    this->size_of_row_data = data_size;
+    this->next_slot = next_slot;    
 }
 
 size_t slot::serialise(char* buffer){
@@ -106,6 +129,8 @@ size_t slot::serialise(char* buffer){
 
     write(&row_offset,sizeof(row_offset));
     write(&size_of_row_data,sizeof(size_of_row_data));
+    write(&next_slot,sizeof(next_slot));
+    write(&prev_slot,sizeof(prev_slot));
 
     return offset;
 }
@@ -119,14 +144,16 @@ size_t slot::deserialise(const char* buffer){
 
     read(&row_offset,sizeof(row_offset));
     read(&size_of_row_data,sizeof(size_of_row_data));
+    read(&next_slot,sizeof(next_slot));
+    read(&prev_slot,sizeof(prev_slot));
     
     return offset;
 }
 
 size_t slot::get_sizeof_object(){
-    return sizeof(row_offset) + sizeof(size_of_row_data);
+    return sizeof(row_offset) + sizeof(size_of_row_data)+sizeof(next_slot) + sizeof(prev_slot);
 }
 
 size_t slot::get_sizeof_slot_obj(){
-    return sizeof(row_offset) + sizeof(size_of_row_data);
+    return sizeof(row_offset) + sizeof(size_of_row_data)+sizeof(next_slot) + sizeof(prev_slot);
 }
