@@ -84,6 +84,9 @@ struct catalog_manager{
     void read_table(table* tbl);
 
     void write_FSM_files();
+
+    bool validate_uniqueness(datatype*,table*,int);
+
 };
 
 #endif

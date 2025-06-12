@@ -1,4 +1,7 @@
 #include "include/constraints.hpp"
+#include "include/backened/table.hpp"
+
+#include "include/query_processor.hpp"
 
 constraint_type primary_key::constrt_type(){
     return PRIMARY_KEY;
@@ -8,8 +11,21 @@ std::string primary_key::get_constrt_name(){
     return "Primary Key";
 }
 
-bool primary_key::validate(const void* row,const void* column){
-    /*row.primary key is valid --> true */
+bool primary_key::validate(datatype* col_val_ptr, table* table,int col_id){
+    /*
+    primary key:not null and unique
+    */
+
+    if(col_val_ptr == nullptr){
+        std::cerr<<"Primary Key Constraints Voilated: value can't be NULL"<<std::endl;
+        exit(EXIT_FAILURE);
+    }
+
+    
+    if(catlg_man->validate_uniqueness(col_val_ptr,table,col_id)){
+        std::cerr<<"Primary Key Unique Constraints voileted"<<std::endl;
+        exit(EXIT_FAILURE);
+    }
     return true;
 }
 
@@ -37,9 +53,13 @@ std::string not_null::get_constrt_name(){
     return "NOT NULL";
 }
 
-bool not_null::validate(const void* row,const void* column){
-    /*row.primary key is valid --> true */
+bool not_null::validate(datatype* col_val_ptr, table* table,int col_id){
+    if(col_val_ptr == nullptr){
+        std::cerr<<"Primary Key Constraints Voilated: value can't be NULL"<<std::endl;
+        exit(EXIT_FAILURE);
+    }
     return true;
+
 }
 
 size_t not_null::serialise(char* buffer){
@@ -68,8 +88,11 @@ std::string default_value::get_constrt_name(){
     return "default";
 }
 
-bool default_value::validate(const void* row,const void* column){
+bool default_value::validate(datatype* col_val_ptr, table* table,int col_id){
     /*row.primary key is valid --> true */
+    if(col_val_ptr == nullptr){
+        col_val_ptr = table->columns[col_id]->dflt_value;
+    }
     return true;
 }
 

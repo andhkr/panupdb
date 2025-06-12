@@ -103,7 +103,7 @@ size_t table_column::get_total_sizeof_object(){
     
     column_constraints* curr = constraints;
     while(curr){
-        if(constraints->constrt_type()==NOT_NULL){
+        if(constraints->constrt_type()==NOT_NULL || constraints->constrt_type()==PRIMARY_KEY){
             nullable = false;
         }
         else if(curr->constrt_type()==DEFAULT_VALUE){
@@ -123,7 +123,7 @@ size_t table_column::get_total_sizeof_object(){
 void table_column::check_constraints(datatype* col_value,table* tbl){
     column_constraints* curr_constrnt = constraints;
     while(curr_constrnt){
-        curr_constrnt->validate(col_value,tbl);
+        curr_constrnt->validate(col_value,tbl,tbl->index_of_col(column_name));
         curr_constrnt = curr_constrnt->next_constraint;
     }
 }

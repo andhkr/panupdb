@@ -487,7 +487,7 @@ void catalog_manager::write_tuple_to_table(table* tbl,std::vector<datatype*>& va
 
     size_t slot_size = slot::get_sizeof_slot_obj();
 
-    int page_available = FSM.get_page_with_available_space(tbl->table_id,free_space_required+slot_size);
+    int page_available = FSM.get_page_with_available_space((free_space_required+slot_size),tbl->table_id);
 
     bool old_page = true;
     if(page_available == -1){
@@ -605,4 +605,27 @@ void catalog_manager::write_FSM_files(){
         fss_hdr.page_counts = page_counts+1;
         fss_hdr.serialise(pfss_hdr->_c_page);
     }
+}
+
+bool catalog_manager::validate_uniqueness(datatype* value,table* tbl,int col_idx){
+    /*in future this is done with help of index files*/
+    for(auto& t:tbl->tuples){
+        datatype* curr = t[col_idx];
+        switch(curr->get_type()){
+            case INT:{
+                if(static_cast<inttype*>(curr)->value == static_cast<inttype*>(value)->value)
+                return true;
+                break;
+            }
+            case VARCHAR:{
+                if(static_cast<varchar*>(curr)->value == static_cast<varchar*>(value)->value)
+                return true;
+                break;
+            }
+            default:{
+                break;
+            }
+        }
+    }
+    return false;
 }

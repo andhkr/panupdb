@@ -9,6 +9,9 @@ AST::AST(std::string id_name):identifier(id_name){}
 
 // // AST::AST(std::string id_name,AST* ptr_sibling):id_name(id_name),ptr_sibling(ptr_sibling){}
 
+AST::AST(std::string id_name,nodetype N_type):identifier(id_name),type(N_type){}
+AST::AST(nodetype N_type):type(N_type){}
+
 AST::~AST(){
     delete this->ptr_sibling;
     delete this->ptr_children;

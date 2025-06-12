@@ -10,13 +10,22 @@
 
 extern std::string database_path;
 
+enum nodetype{
+    bop,/*binary operator*/
+    val,
+    tbl_or_col
+};
+
 struct AST{
     std::string identifier; /*select,insert,table_name,column_list,column_name*/
     AST* ptr_children=nullptr;
     AST* ptr_sibling=nullptr;
+    nodetype type;
 
     AST()=default;
     AST(std::string id_name);
+    AST(std::string,nodetype);
+    AST(nodetype);
     // // AST(std::string id_name,AST* ptr_children);
     // AST(std::string id_name,AST* ptr_children,AST* ptr_sibling);
     // // AST(std::string id_name,AST* ptr_sibling);

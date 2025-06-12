@@ -4,6 +4,7 @@
 #include "constraints.hpp"
 #include "backened/table.hpp"
 #include "backened/catalog_manager.hpp"
+// #include "datatypes.hpp"
 
 struct query_processor{
 
@@ -17,6 +18,39 @@ struct query_processor{
 
     void print_table(table*);
     
+};
+
+/*condition can be where clause or join condition*/
+struct condition {
+    virtual ~condition()=default;
+    virtual bool evaluate(std::vector<datatype*>& tuple,table* tbl)=0;
+};
+
+struct And_cond :public condition{
+    condition* L;
+    condition* R;
+    And_cond()=default;
+    And_cond(condition*,condition*);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
+};
+
+struct Or_cond :public condition{
+    condition* L;
+    condition* R;
+    Or_cond()=default;
+    Or_cond(condition*,condition*);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
+};
+
+
+struct comparison : condition{
+    AST* leftexpr;
+    AST* rightexpr;
+    Ops op;
+    
+    comparison()=default;
+    comparison(AST*,AST*,Ops);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
 };
 
 extern query_processor query_executor;

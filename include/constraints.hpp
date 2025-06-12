@@ -5,6 +5,8 @@
 #include <cstring>
 #include "datatypes.hpp"
 
+struct table;
+
 enum constraint_type {
     PRIMARY_KEY,
     UNIQUE,
@@ -22,7 +24,7 @@ struct column_constraints{
 
     virtual std::string get_constrt_name() = 0;
 
-    virtual bool validate(const void* row, const void* table) = 0;
+    virtual bool validate(datatype* row, table* table,int col_id) = 0;
 
     virtual size_t serialise(char* buffer) = 0;
 
@@ -38,7 +40,7 @@ struct primary_key : public column_constraints{
 
     std::string get_constrt_name();
 
-    bool validate(const void* row, const void* table);
+    bool validate(datatype* row, table* table,int col_id);
 
     size_t serialise(char* buffer);
 
@@ -53,7 +55,7 @@ struct primary_key : public column_constraints{
 
 //     std::string get_constrt_name();
 
-//     bool validate(const void* row, const void* table);
+//     bool validate(datatype* row, table* table,int col_id);
 
 //     size_t serialise(char* buffer);
 
@@ -67,7 +69,7 @@ struct not_null : public column_constraints {
 
     std::string get_constrt_name();
 
-    bool validate(const void* row, const void* table);
+    bool validate(datatype* row, table* table,int col_id);
 
     size_t serialise(char* buffer);
 
@@ -87,7 +89,7 @@ struct default_value : public column_constraints {
 
     std::string get_constrt_name();
 
-    bool validate(const void* row, const void* table);
+    bool validate(datatype* row, table* table,int col_id);
 
     size_t serialise(char* buffer);
 

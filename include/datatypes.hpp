@@ -15,7 +15,18 @@ enum type {
     CHAR,
     NUMERIC,
     DATE,
-    TEXT
+    TEXT,
+    TYPE_COUNT
+};
+
+enum Ops {
+    EQ,
+    LT,
+    GT,
+    LTE,
+    GTE,
+    NEQ,
+    OPS_COUNT
 };
 
 class datatype{

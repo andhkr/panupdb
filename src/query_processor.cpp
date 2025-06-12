@@ -1,4 +1,5 @@
 #include "include/query_processor.hpp"
+#include "include/evaluate_comp_expr.hpp"
 
 query_processor query_executor;
 
@@ -41,13 +42,16 @@ void query_processor::process_insert_stmt(insert_stmt* obj){
                 int index = table->index_of_col(corresp_col->column_name);
                 nullbitmap[index] = false;
                 datatype* col_value = reinterpret_cast<datatype*>(valuesptr->ptr_children);
-                corresp_col->check_constraints(col_value,table);
                 values[index] = col_value;
                 colsptr = colsptr->ptr_sibling;
                 valuesptr = valuesptr->ptr_sibling;
             }
+
+            for(uint i = 0;i<table->column_cts;++i){
+                table->columns[i]->check_constraints(values[i],table);
+            }
             /*issue disk write to catalog manager*/
-            catlg_man->write_tuple_to_table(table, values,nullbitmap);
+            catlg_man->write_tuple_to_table(table, values, nullbitmap);
             table->tuples.push_back(values);
         }else{
 
@@ -67,3 +71,46 @@ void query_processor::process_select_stmt(select_node* obj){
 void query_processor::print_table(table* tbl){
     tbl->print_tuples();
 }
+
+And_cond::And_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
+
+bool And_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    return L->evaluate(tuple,tbl) && R->evaluate(tuple,tbl);
+}
+
+Or_cond::Or_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
+
+bool Or_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    return L->evaluate(tuple,tbl) || R->evaluate(tuple,tbl);
+}
+
+comparison::comparison(AST* L,AST* R,Ops Op):leftexpr(L),rightexpr(R),op(Op){}
+
+datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl);
+
+bool comparison::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    
+    return evaluate_and_comp(evaluate_expr(leftexpr,tuple,tbl), evaluate_expr(rightexpr,tuple,tbl),op);
+}
+
+datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl){
+
+   switch(expr->type){
+    case bop:{
+        break;
+    }
+    case val:{
+        return reinterpret_cast<datatype*>(expr->ptr_children);
+
+    }case tbl_or_col:{
+        return tuple[tbl->index_of_col(expr->identifier)];
+
+    }default:{
+        break;
+    }
+   }
+   return nullptr;
+
+}
+
+

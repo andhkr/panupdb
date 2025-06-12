@@ -163,7 +163,9 @@ join_type
 
 where_clause_opt
     : /* empty */
-    | WHERE search_condition
+    | WHERE search_condition {
+
+    }
     ;
 
 group_by_clause_opt
@@ -400,15 +402,19 @@ drop_table
 
 /* Conditions */
 search_condition
-    : search_condition OR search_condition
+    : search_condition OR search_condition 
     | search_condition AND search_condition
     | NOT search_condition
     | '(' search_condition ')'
-    | predicate
+    | predicate {
+
+    }
     ;
 
 predicate
-    : comparison_predicate
+    : comparison_predicate {
+
+    }
     | between_predicate
     | in_predicate
     | like_predicate
@@ -417,7 +423,9 @@ predicate
     ;
 
 comparison_predicate
-    : expression '=' expression
+    : expression '=' expression{
+
+    }
     | expression '<' expression
     | expression '>' expression
     | expression LE expression
@@ -469,13 +477,14 @@ expression
 
 term
     : IDENTIFIER   {
-        $$ = new AST(std::string($1)) ;
+        $$ = new AST(std::string($1),tbl_or_col) ;
+
     }
     | table_name '.' IDENTIFIER {}
     | INTEGER_LITERAL {
         datatype* data = new inttype();
         ((inttype*)data)->value = $1;
-        AST* intnode = new AST("INT");
+        AST* intnode = new AST(val);
         intnode->ptr_children = (AST*)data;
         $$ = intnode;
     }
@@ -485,7 +494,7 @@ term
     | STRING_LITERAL {
         datatype* data = new varchar(10);
         ((varchar*)data)->value = std::string($1);
-        AST* strnode = new AST("STR");
+        AST* strnode = new AST(val);
         strnode->ptr_children = (AST*)data;
         $$ = strnode;
     }
