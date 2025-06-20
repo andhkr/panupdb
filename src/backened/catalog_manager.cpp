@@ -1,5 +1,6 @@
 #include "include/backened/catalog_manager.hpp"
 #include "include/backened/page.hpp"
+#include "include/evaluate_comp_expr.hpp"
 
 std::string get_filename_without_extension(const std::string& path) {
     // Find last '/' or '\\'
@@ -107,6 +108,7 @@ page_id will be increasing order and incresed by 1
 catalog_manager::catalog_manager(){
     file_id_filename_lookup[0]=database_path +  file_id_filename_hash_table;
     load_file_lookup();
+    init_op_tables();
 }
 
 void catalog_manager::load_file_lookup() {
@@ -629,3 +631,40 @@ bool catalog_manager::validate_uniqueness(datatype* value,table* tbl,int col_idx
     }
     return false;
 }
+
+void catalog_manager::get_batch_of_tbl(std::vector<std::vector<datatype*>>& tpls,uint file_id,uint page_id){
+    cached_page* page = buffer_pool_manager.get_page(file_id,page_id);
+    page->pin_unpin = true;
+    page_header pg_hdr;
+    pg_hdr.deserialise(page->_c_page);
+
+ 
+    char* slot_ptr = page->_c_page + pg_hdr.start_offset;
+    char* slot_ptr_end = page->_c_page+pg_hdr.curr_offset;
+    
+    while(slot_ptr<slot_ptr_end){
+        slot row_offset;
+        slot_ptr += row_offset.deserialise(slot_ptr);
+        char* ptr = page->_c_page + row_offset.row_offset;
+        std::vector<bool> nullbitmap = deserialise_nullbitmap(ptr);
+        size_t offset = sizeof(uint8_t)*nullbitmap.size() + sizeof(size_t);
+        std::cout<<offset<<std::endl;
+        ptr += offset;
+        std::vector<datatype*> values;
+        for(size_t i = 0;i<nullbitmap.size();++i){
+            datatype* data = nullptr;
+            if(!nullbitmap[i]){
+                data = get_polymorphic_obj(ptr);
+                ptr += data->get_total_object_size();
+                values.push_back(data);
+            }else{
+                values.push_back(nullptr);
+            }
+        }
+        tpls.push_back(values);
+    }
+
+    page->pin_unpin = false;
+}
+
+

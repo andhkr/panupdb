@@ -1,5 +1,5 @@
 #include "include/query_processor.hpp"
-#include "include/evaluate_comp_expr.hpp"
+#include "include/select_plan.hpp"
 
 query_processor query_executor;
 
@@ -63,54 +63,64 @@ void query_processor::process_insert_stmt(insert_stmt* obj){
     }
 }
 
+void print_val(std::future<batch>&& res);
+
 void query_processor::process_select_stmt(select_node* obj){
-    catlg_man->catalog_file_list[obj->table_reference_list->first_table->identifier]->print_tuples();
-    // tbl->print_tuples();
+
+    logical_op_uptr loptr = get_logical_ast(obj);
+    physical_op_uptr phy_root = query_planner::plan(loptr.get());
+
+    project_op* root = static_cast<project_op*>(phy_root.get());
+    for(int i = 0;i<root->clmns.size();++i){
+        std::cout<<root->clmns[i]<<"     ";
+    }
+    std::cout<<std::endl;
+
+    std::vector<std::future<void>> print_val_future;
+    bool flag = true;
+    while(flag){
+
+        std::future<batch> result;
+        flag = phy_root->next(result);
+        
+        if(!flag) break;
+        std::future<void> print_future = worker_threads.submit_task(
+            [result = std::move(result)]() mutable {
+                return print_val(std::move(result));
+            }
+        );
+
+        print_val_future.push_back(std::move(print_future));
+        
+    }
+
+    for(auto& print_future:print_val_future){
+        print_future.get();
+    }
 }
 
+void print_val(std::future<batch>&& res){
+    batch tpls  = res.get();
+    for(int i = 0;i<tpls.size();++i){
+        for(auto& v : tpls[i]){
+            switch(v->get_type()){
+                case INT:{
+                    std::cout<<static_cast<inttype*>(v)->value<<"     ";
+                }
+                break;
+                case VARCHAR:{
+                    std::cout<<static_cast<varchar*>(v)->value<<"     ";
+                    break;
+                }default:{
+                    break;
+                }
+            }
+        }
+        std::cout<<std::endl;
+    }
+    std::cout<<"called"<<std::endl;
+}
 void query_processor::print_table(table* tbl){
     tbl->print_tuples();
 }
-
-And_cond::And_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
-
-bool And_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
-    return L->evaluate(tuple,tbl) && R->evaluate(tuple,tbl);
-}
-
-Or_cond::Or_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
-
-bool Or_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
-    return L->evaluate(tuple,tbl) || R->evaluate(tuple,tbl);
-}
-
-comparison::comparison(AST* L,AST* R,Ops Op):leftexpr(L),rightexpr(R),op(Op){}
-
-datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl);
-
-bool comparison::evaluate(std::vector<datatype*>& tuple,table* tbl){
-    
-    return evaluate_and_comp(evaluate_expr(leftexpr,tuple,tbl), evaluate_expr(rightexpr,tuple,tbl),op);
-}
-
-datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl){
-
-   switch(expr->type){
-    case bop:{
-        break;
-    }
-    case val:{
-        return reinterpret_cast<datatype*>(expr->ptr_children);
-
-    }case tbl_or_col:{
-        return tuple[tbl->index_of_col(expr->identifier)];
-
-    }default:{
-        break;
-    }
-   }
-   return nullptr;
-
-}
-
 

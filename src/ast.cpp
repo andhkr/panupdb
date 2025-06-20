@@ -1,5 +1,95 @@
 #include "include/ast.hpp"
 #include <cstring>
+#include "include/evaluate_comp_expr.hpp"
+#include "include/backened/table.hpp"
+
+And_cond::And_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
+
+bool And_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    return L->evaluate(tuple,tbl) && R->evaluate(tuple,tbl);
+}
+
+void And_cond::print(int iden){
+    int level = iden;
+    while(level--){
+        std::cout<<" ";
+    }
+    std::cout<<"|-AND"<<std::endl;
+    L->print(iden+1);
+    R->print(iden+1);
+}
+
+Or_cond::Or_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
+
+bool Or_cond::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    return L->evaluate(tuple,tbl) || R->evaluate(tuple,tbl);
+}
+
+void Or_cond::print(int iden){
+    int level = iden;
+    while(level--){
+        std::cout<<" ";
+    }
+    std::cout<<"|-Or"<<std::endl;
+    L->print(iden+1);
+    R->print(iden+1);
+}
+
+comparison::comparison(AST* L,AST* R,Ops Op):leftexpr(L),rightexpr(R),op(Op){}
+
+datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl);
+
+void comparison::print(int iden){
+    int level = iden;
+    while(level--){
+        std::cout<<" ";
+    }
+    switch (op)
+    {
+    case Ops::EQ:{
+        std::cout<<"|-[=]"<<std::endl;
+        break;
+    }
+    case Ops::LT:{
+        std::cout<<"|-[<]"<<std::endl;
+        break;
+    }
+    case Ops::GT:{
+        std::cout<<"|-[>]"<<std::endl;
+        break;
+    }
+    default:
+        break;
+    }
+
+    leftexpr->print_ast(iden+1);
+    rightexpr->print_ast(iden+1);
+}
+
+bool comparison::evaluate(std::vector<datatype*>& tuple,table* tbl){
+    
+    return evaluate_and_comp(evaluate_expr(leftexpr,tuple,tbl), evaluate_expr(rightexpr,tuple,tbl),op);
+}
+
+datatype* evaluate_expr(AST* expr,std::vector<datatype*>& tuple,table* tbl){
+
+   switch(expr->type){
+    case bop:{
+        break;
+    }
+    case val:{
+        return reinterpret_cast<datatype*>(expr->ptr_children);
+
+    }case tbl_or_col:{
+        return tuple[tbl->index_of_col(expr->identifier)];
+
+    }default:{
+        break;
+    }
+   }
+   return nullptr;
+
+}
 
 AST::AST(std::string id_name):identifier(id_name){}
 
@@ -22,30 +112,53 @@ void AST::print_ast(int identation){
     while(iden--){
         std::cout<<" ";
     }
-    std::cout<<"|- "<<this->identifier<<std::endl;
-    if(this->ptr_children)
-        this->ptr_children->print_ast(identation+1);
-    if(this->ptr_sibling){
-        if(this->identifier != "DEFAULT")
-        this->ptr_sibling->print_ast(identation);
-        else {
-            iden = identation;
-            while(iden--){
-                std::cout<<" ";
+    switch(type){
+        case nodetype::tbl_or_col:{
+            std::cout<<"|- "<<this->identifier<<std::endl;
+            if(this->ptr_children)
+                this->ptr_children->print_ast(identation+1);
+            if(this->ptr_sibling){
+                if(this->identifier != "DEFAULT")
+                this->ptr_sibling->print_ast(identation);
+                else {
+                    iden = identation;
+                    while(iden--){
+                        std::cout<<" ";
+                    }
+                    switch(((datatype*)(this->ptr_sibling))->get_type()){
+                        case INT:{
+                            std::cout<<"  |- "<<(((inttype*)(this->ptr_sibling))->value)<<std::endl;
+                            break;
+                        }
+                        case VARCHAR:{
+                            std::cout<<"  |- "<<(((varchar*)(this->ptr_sibling))->value)<<std::endl;
+                            break;
+                        }
+                        default:{
+                            break;
+                        }
+                    }
+                }
             }
-            switch(((datatype*)(this->ptr_sibling))->get_type()){
-                case INT:{
-                    std::cout<<"  |- "<<(((inttype*)(this->ptr_sibling))->value)<<std::endl;
-                    break;
-                }
-                case VARCHAR:{
-                    std::cout<<"  |- "<<(((varchar*)(this->ptr_sibling))->value)<<std::endl;
-                    break;
-                }
-                default:{
-                    break;
-                }
+            break;
+        }case nodetype::val :{
+            
+            datatype* data = reinterpret_cast<datatype*>(this->ptr_children);
+            switch (data->get_type())
+            {
+            case INT:{
+                std::cout<<"|- "<<static_cast<inttype*>(data)->value<<std::endl;
+                break;
             }
+            case VARCHAR:{
+                std::cout<<"|- "<<static_cast<varchar*>(data)->value<<std::endl;
+                break;
+            }
+            default:
+                break;
+            }
+        }default:{
+            break;
         }
     }
     
@@ -57,6 +170,9 @@ void select_node::print_select(){
     this->select_list->print_ast(2);
     std::cout<<"from_clause"<<std::endl;
     this->table_reference_list->first_table->print_ast(2);
+    std::cout<<"where_clause"<<std::endl;
+    where_clause->print(2);
+
 
 }
 

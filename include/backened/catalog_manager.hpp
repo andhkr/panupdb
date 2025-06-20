@@ -87,6 +87,7 @@ struct catalog_manager{
 
     bool validate_uniqueness(datatype*,table*,int);
 
+    void get_batch_of_tbl(std::vector<std::vector<datatype*>>&,uint,uint);
 };
 
 #endif

@@ -13,7 +13,9 @@ extern std::string database_path;
 enum nodetype{
     bop,/*binary operator*/
     val,
-    tbl_or_col
+    tbl_or_col,
+    tbl,
+    TOTAL
 };
 
 struct AST{
@@ -33,6 +35,43 @@ struct AST{
     void print_ast(int identation);
 };
 
+/*condition can be where clause or join condition*/
+struct condition {
+    virtual ~condition()=default;
+    virtual bool evaluate(std::vector<datatype*>& tuple,table* tbl)=0;
+    virtual void print(int)=0;
+};
+
+struct And_cond :public condition{
+    condition* L;
+    condition* R;
+    And_cond()=default;
+    And_cond(condition*,condition*);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
+    void print(int);
+};
+
+struct Or_cond :public condition{
+    condition* L;
+    condition* R;
+    Or_cond()=default;
+    Or_cond(condition*,condition*);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
+    void print(int);
+};
+
+
+struct comparison : condition{
+    AST* leftexpr;
+    AST* rightexpr;
+    Ops op;
+    
+    comparison()=default;
+    comparison(AST*,AST*,Ops);
+    bool evaluate(std::vector<datatype*>& tuple,table* tbl);
+    void print(int);
+};
+
 struct from_clause:public AST{
     // phase 1: table name without joins and aliases
     std::unique_ptr<AST> first_table;
@@ -42,7 +81,7 @@ struct select_node:public AST{
     // phase 1: select * / columns from a table
     std::unique_ptr<AST> select_list;
     std::unique_ptr<from_clause> table_reference_list;
-
+    std::unique_ptr<condition> where_clause;
     void print_select();
 };
 

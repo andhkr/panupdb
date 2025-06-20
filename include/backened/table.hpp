@@ -61,8 +61,9 @@ struct table{
 
     int index_of_col(std::string&);
 
-    void print_tuples();
+    table_column* get_column(std::string&);
 
+    void print_tuples();
 };
 
 #endif

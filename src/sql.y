@@ -32,6 +32,7 @@ extern int  yylex (void);
     datatype* dtype;
     insert_stmt* insert;
     column_constraints* clmn_constrnt;
+    condition* search_cond;
 }
 
 /* ----------------------------------------------------------------------------
@@ -60,6 +61,7 @@ extern int  yylex (void);
 %type <dtype> data_type default_value
 %type <insert> insert_statement
 %type <ast_node> insert_columns_clause insert_values_list column_reference column_reference_list
+%type <search_cond> where_clause_opt search_condition predicate comparison_predicate 
 /* precedence / associativity */
 %left OR
 %left AND
@@ -97,6 +99,7 @@ select_statement
             select_node* select = new select_node();
             select->select_list.reset($2);
             select->table_reference_list.reset($4);
+            select->where_clause.reset($5);
             $$ = select;
         }
         ;
@@ -162,9 +165,9 @@ join_type
     ;
 
 where_clause_opt
-    : /* empty */
+    : /* empty */ {$$ = nullptr;}
     | WHERE search_condition {
-
+        $$ = $2;
     }
     ;
 
@@ -402,35 +405,45 @@ drop_table
 
 /* Conditions */
 search_condition
-    : search_condition OR search_condition 
-    | search_condition AND search_condition
-    | NOT search_condition
-    | '(' search_condition ')'
+    : search_condition OR search_condition {}
+    | search_condition AND search_condition{}
+    | NOT search_condition{}
+    | '(' search_condition ')'{}
     | predicate {
-
+        $$ = $1;
     }
     ;
 
 predicate
     : comparison_predicate {
-
+        $$ = $1;
     }
-    | between_predicate
-    | in_predicate
-    | like_predicate
-    | null_predicate
-    | exists_predicate
+    | between_predicate{}
+    | in_predicate{}
+    | like_predicate{}
+    | null_predicate{}
+    | exists_predicate{}
     ;
 
 comparison_predicate
     : expression '=' expression{
-
+        $$ = new comparison($1,$3,Ops::EQ);
     }
-    | expression '<' expression
-    | expression '>' expression
-    | expression LE expression
-    | expression GE expression
-    | expression NE expression
+    | expression '<' expression{
+        $$ = new comparison($1,$3,Ops::LT);
+    }
+    | expression '>' expression{
+        $$ = new comparison($1,$3,Ops::GT);
+    }
+    | expression LE expression{
+        $$ = new comparison($1,$3,Ops::LTE);
+    }
+    | expression GE expression{
+        $$ = new comparison($1,$3,Ops::GTE);
+    }
+    | expression NE expression{
+        $$ = new comparison($1,$3,Ops::NEQ);
+    }
     ;
 
 between_predicate
