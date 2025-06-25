@@ -117,6 +117,8 @@ void catalog_manager::load_file_lookup() {
     catalog_file_header lookup_hdr;
     lookup_hdr.deserialise(header_page->_c_page);
     uint total_pages = lookup_hdr.page_counts;
+    /*release the lock*/
+    header_page->unpin_page();
 
     // --- Step 2: Deserialize all (file_id → filename) entries from pages 1..total_pages ---
     for (uint page_id = 1; page_id < total_pages; ++page_id) {
@@ -145,6 +147,8 @@ void catalog_manager::load_file_lookup() {
             // Insert into the in-memory lookup map
             file_id_filename_lookup[file_entry.file_id] = file_entry.file_name;
         }
+        /*release the lock*/
+        page->unpin_page();
     }
 
     // --- Step 3: Load each table’s catalog (skip the id_name lookup itself) ---
@@ -174,7 +178,7 @@ void catalog_manager::load_file_FSM(uint file_id,std::string& fsm_table_name){
 
     fsm_hdr.deserialise(fsm_page->_c_page);
     uint page_counts = fsm_hdr.page_counts;
-    fsm_page->pin_unpin = false;
+    fsm_page->unpin_page();
 
     for(uint pid = 1;pid<page_counts;++pid){
         cached_page* page = buffer_pool_manager.get_page(file_id,pid);
@@ -193,7 +197,7 @@ void catalog_manager::load_file_FSM(uint file_id,std::string& fsm_table_name){
             FSM.add_page_space(file_id,ppfs.page_id,ppfs.free_space);
         }
 
-        page->pin_unpin = false;
+        page->unpin_page();
     }
 }
 
@@ -209,12 +213,11 @@ void catalog_manager::create_table(table* obj) {
     // Pull page 0 of the new datafile to write its header
     cached_page* data_header_page = buffer_pool_manager.get_page(data_file_id, 0);
     data_header_page->dirty     = true;
-    data_header_page->pin_unpin = true;
 
     datafile_header data_hdr(data_file_id, obj->table_name);
     data_hdr.serialise(data_header_page->_c_page);
 
-    data_header_page->pin_unpin = false;
+    data_header_page->unpin_page();
 
     uint fsm_file_id = get_file_id();
     std::string fsmfile_name = database_path + "fsmfile/" + obj->table_name + ".fs";
@@ -223,12 +226,11 @@ void catalog_manager::create_table(table* obj) {
     // Pull page 0 of the new datafile to write its header
     cached_page* fsm_header_page = buffer_pool_manager.get_page(fsm_file_id, 0);
     fsm_header_page->dirty     = true;
-    fsm_header_page->pin_unpin = true;
 
     datafile_header fsm_hdr(fsm_file_id, obj->table_name);
     fsm_hdr.serialise(fsm_header_page->_c_page);
 
-    fsm_header_page->pin_unpin = false;
+    fsm_header_page->unpin_page();
 
 
     // --- Step 2: Create and initialize the catalog file for this table ---
@@ -239,7 +241,6 @@ void catalog_manager::create_table(table* obj) {
     // Pull page 0 of the new catalog file to write its header later
     cached_page* catalog_header_page = buffer_pool_manager.get_page(catalog_file_id, 0);
     catalog_header_page->dirty     = true;
-    catalog_header_page->pin_unpin = true;
 
     // Register this table object in in-memory table_list
     catalog_file_list[obj->table_name] = obj;
@@ -294,7 +295,7 @@ void catalog_manager::create_table(table* obj) {
 
         // Serialize the page_header into the first bytes of payload
         hdr.serialise(page->_c_page);
-        page->pin_unpin = false;
+        page->unpin_page();
 
         ++page_id;  // next page in the catalog file (if any columns remain)
     }
@@ -309,7 +310,7 @@ void catalog_manager::create_table(table* obj) {
     if (cat_hdr.get_total_object_size() <= page_size) {
         cat_hdr.serialise(catalog_header_page->_c_page);
     }
-    catalog_header_page->pin_unpin = false;
+    catalog_header_page->unpin_page();
 }
 
 void catalog_manager::load_catalog_file(uint file_id,std::string& table_name) {
@@ -319,6 +320,7 @@ void catalog_manager::load_catalog_file(uint file_id,std::string& table_name) {
     cat_hdr.deserialise(header_page->_c_page);
     uint data_pages = cat_hdr.page_counts;  // number of pages
 
+    header_page->unpin_page();
     // Prepare a new table object to fill
     table* loaded_table = new table;
     loaded_table->table_name = table_name;
@@ -350,6 +352,7 @@ void catalog_manager::load_catalog_file(uint file_id,std::string& table_name) {
             loaded_table->columns.push_back(column);
             ++column_cts;
         }
+        page->unpin_page();
     }
 
     loaded_table->column_cts = column_cts;
@@ -367,7 +370,7 @@ void catalog_manager::write_file_lookup() {
     uint page_id = 0;
     cached_page* header_page = buffer_pool_manager.get_page(0, page_id);
     header_page->dirty     = true;
-    header_page->pin_unpin = true;
+
 
     // Iterate over every (file_id → filename) pair
     auto it = file_id_filename_lookup.begin();
@@ -418,7 +421,7 @@ void catalog_manager::write_file_lookup() {
 
         // Serialize the page_header into the first bytes of buf
         hdr.serialise(buf);
-        page->pin_unpin = false;
+        page->unpin_page();
     }
 
     // Now write the lookup file’s header (page 0)
@@ -426,7 +429,7 @@ void catalog_manager::write_file_lookup() {
     lookup_hdr.cat_id     = 0;
     lookup_hdr.page_counts = page_id+1;  // total pages used for the lookup‐file (including header page)
     lookup_hdr.serialise(header_page->_c_page);
-    header_page->pin_unpin = false;
+    header_page->unpin_page();
 }
 
 size_t catalog_manager::serialise_nullbitmap(char* buffer, std::vector<bool>& nullbitmap) {
@@ -468,75 +471,73 @@ std::vector<bool> catalog_manager::deserialise_nullbitmap(const char* buffer) {
         nullbitmap[i] = (b != 0);
     }
 
-    std::cout<<offset<<" "<<buffer<<std::endl;
     return nullbitmap;
 }
 
 
-void catalog_manager::write_tuple_to_table(table* tbl,std::vector<datatype*>& values ,std::vector<bool>& nullbitmap){
-    /*step1:fetch header of table check the free list location and capacity of that location*/
-    cached_page* c_hdr_page = buffer_pool_manager.get_page(tbl->table_id,0);
-    c_hdr_page->pin_unpin = true;
+void catalog_manager::write_tuple_to_table(table* tbl,std::vector<std::vector<datatype*>>& totalvalues ,std::vector<bool>& nullbitmap){
+    for(auto& values:totalvalues){
+        /*step1:fetch header of table check the free list location and capacity of that location*/
+        cached_page* c_hdr_page = buffer_pool_manager.get_page(tbl->table_id,0);
 
-    datafile_header df_hdr;
-    df_hdr.deserialise(c_hdr_page->_c_page);
-    
-    size_t free_space_required = 0;
-    for(auto& data:values){
-        free_space_required += data->get_total_object_size();
-    }
-    free_space_required += nullbitmap.size()*sizeof(uint8_t)+sizeof(size_t);
-
-    size_t slot_size = slot::get_sizeof_slot_obj();
-
-    int page_available = FSM.get_page_with_available_space((free_space_required+slot_size),tbl->table_id);
-
-    bool old_page = true;
-    if(page_available == -1){
-        page_available = df_hdr.page_counts;
-        df_hdr.page_counts = df_hdr.page_counts + 1;
+        datafile_header df_hdr;
+        df_hdr.deserialise(c_hdr_page->_c_page);
         
-        c_hdr_page->dirty = true;
-        df_hdr.serialise(c_hdr_page->_c_page);
-        old_page = false;
+        size_t free_space_required = 0;
+        for(auto& data:values){
+            free_space_required += data->get_total_object_size();
+        }
+        free_space_required += nullbitmap.size()*sizeof(uint8_t)+sizeof(size_t);
+
+        size_t slot_size = slot::get_sizeof_slot_obj();
+
+        int page_available = FSM.get_page_with_available_space((free_space_required+slot_size),tbl->table_id);
+
+        bool old_page = true;
+        if(page_available == -1){
+            page_available = df_hdr.page_counts;
+            df_hdr.page_counts = df_hdr.page_counts + 1;
+            
+            c_hdr_page->dirty = true;
+            df_hdr.serialise(c_hdr_page->_c_page);
+            old_page = false;
+        }
+
+        c_hdr_page->unpin_page();
+
+        cached_page* free_space_page = buffer_pool_manager.get_page(tbl->table_id,page_available);
+        free_space_page->dirty = true;
+        /*step2:issue data writes*/
+        
+        page_header pg_hdr(page_available);
+        if(old_page)
+        pg_hdr.deserialise(free_space_page->_c_page);
+
+        size_t row_offset = pg_hdr.free_space_start_marker - free_space_required;
+        char* row_ptr = free_space_page->_c_page + row_offset;
+        row_ptr += serialise_nullbitmap(row_ptr,nullbitmap);
+
+        for(auto& data:values){
+            row_ptr += data->serialise(row_ptr);
+        }
+        pg_hdr.free_space_start_marker = row_offset;
+
+        slot row_slot(row_offset,free_space_required);
+        pg_hdr.curr_offset += row_slot.serialise(free_space_page->_c_page + pg_hdr.curr_offset);
+
+        pg_hdr.serialise(free_space_page->_c_page);
+        free_space_page->unpin_page();
+
+        FSM.update_available_space(tbl->table_id,page_available,(pg_hdr.free_space_start_marker-pg_hdr.curr_offset));
     }
-
-    c_hdr_page->pin_unpin = false;
-
-    cached_page* free_space_page = buffer_pool_manager.get_page(tbl->table_id,page_available);
-    free_space_page->pin_unpin = true;
-    free_space_page->dirty = true;
-    /*step2:issue data writes*/
-    
-    page_header pg_hdr(page_available);
-    if(old_page)
-    pg_hdr.deserialise(free_space_page->_c_page);
-
-    size_t row_offset = pg_hdr.free_space_start_marker - free_space_required;
-    char* row_ptr = free_space_page->_c_page + row_offset;
-    row_ptr += serialise_nullbitmap(row_ptr,nullbitmap);
-
-    for(auto& data:values){
-        row_ptr += data->serialise(row_ptr);
-    }
-    pg_hdr.free_space_start_marker = row_offset;
-
-    slot row_slot(row_offset,free_space_required);
-    pg_hdr.curr_offset += row_slot.serialise(free_space_page->_c_page + pg_hdr.curr_offset);
-
-    pg_hdr.serialise(free_space_page->_c_page);
-    free_space_page->pin_unpin = false;
-
-    FSM.update_available_space(tbl->table_id,page_available,(pg_hdr.free_space_start_marker-pg_hdr.curr_offset));
 }
 
 void catalog_manager::read_table(table* tbl){
     cached_page* c_hdr_page = buffer_pool_manager.get_page(tbl->table_id,0);
-    c_hdr_page->pin_unpin = true;
     datafile_header df_hdr;
     df_hdr.deserialise(c_hdr_page->_c_page);
     uint page_cnts = df_hdr.page_counts;
-    c_hdr_page->pin_unpin = false;
+    c_hdr_page->unpin_page();
 
     for(uint pid = 1;pid<page_cnts;++pid){
         cached_page* page = buffer_pool_manager.get_page(tbl->table_id,pid);
@@ -554,7 +555,6 @@ void catalog_manager::read_table(table* tbl){
             char* ptr = page->_c_page + row_offset.row_offset;
             std::vector<bool> nullbitmap = deserialise_nullbitmap(ptr);
             size_t offset = sizeof(uint8_t)*nullbitmap.size() + sizeof(size_t);
-            std::cout<<offset<<std::endl;
             ptr += offset;
             std::vector<datatype*> values;
             for(size_t i = 0;i<nullbitmap.size();++i){
@@ -569,7 +569,7 @@ void catalog_manager::read_table(table* tbl){
             }
             tbl->tuples.push_back(values);
         }
-        page->pin_unpin = false;
+        page->unpin_page();
     }
 }
 
@@ -578,34 +578,38 @@ void catalog_manager::write_FSM_files(){
         file_id = FSS.first;
 
         uint page_counts = 0;
-    next_page:    
-        cached_page* page = buffer_pool_manager.get_page(file_id,++page_counts);
-        page_header pg_hdr(page_counts);
-        
-        for(auto& ppfs : FSS.second){
-            size_t size = ppfs.get_object_total_size();
-            if((pg_hdr.curr_offset + size) <= pg_hdr.free_space_start_marker){
-                size_t row_offset = pg_hdr.free_space_start_marker - size;
-                ppfs.serialise(page->_c_page + row_offset);
+        auto it = FSS.second.begin();
+        auto end = FSS.second.end();
+        while(it != end){
 
-                slot s(row_offset,size);
-                pg_hdr.curr_offset += s.serialise(page->_c_page + pg_hdr.curr_offset);
-                pg_hdr.free_space_start_marker = row_offset;
-            }else {
-                pg_hdr.serialise(page->_c_page);
-                page->dirty = true;
-                page->pin_unpin = false;
-                goto next_page;
+            cached_page* page = buffer_pool_manager.get_page(file_id,++page_counts);
+            page_header pg_hdr(page_counts);
+            
+            for(;it != end;++it){
+                
+                size_t size = (*it).get_object_total_size();
+                if((pg_hdr.curr_offset + size) <= pg_hdr.free_space_start_marker){
+                    size_t row_offset = pg_hdr.free_space_start_marker - size;
+                    (*it).serialise(page->_c_page + row_offset);
+
+                    slot s(row_offset,size);
+                    pg_hdr.curr_offset += s.serialise(page->_c_page + pg_hdr.curr_offset);
+                    pg_hdr.free_space_start_marker = row_offset;
+                }else {
+                    break;
+                }
             }
+
+            pg_hdr.serialise(page->_c_page);
+            page->dirty = true;
+            page->unpin_page();
         }
-        pg_hdr.serialise(page->_c_page);
-        page->dirty = true;
-        page->pin_unpin = false;
 
         cached_page * pfss_hdr = buffer_pool_manager.get_page(file_id,0);
         datafile_header fss_hdr;
         fss_hdr.page_counts = page_counts+1;
         fss_hdr.serialise(pfss_hdr->_c_page);
+        pfss_hdr->unpin_page();
     }
 }
 
@@ -638,7 +642,6 @@ void catalog_manager::get_batch_of_tbl(std::vector<std::vector<datatype*>>& tpls
     page_header pg_hdr;
     pg_hdr.deserialise(page->_c_page);
 
- 
     char* slot_ptr = page->_c_page + pg_hdr.start_offset;
     char* slot_ptr_end = page->_c_page+pg_hdr.curr_offset;
     
@@ -648,7 +651,6 @@ void catalog_manager::get_batch_of_tbl(std::vector<std::vector<datatype*>>& tpls
         char* ptr = page->_c_page + row_offset.row_offset;
         std::vector<bool> nullbitmap = deserialise_nullbitmap(ptr);
         size_t offset = sizeof(uint8_t)*nullbitmap.size() + sizeof(size_t);
-        std::cout<<offset<<std::endl;
         ptr += offset;
         std::vector<datatype*> values;
         for(size_t i = 0;i<nullbitmap.size();++i){
@@ -664,7 +666,7 @@ void catalog_manager::get_batch_of_tbl(std::vector<std::vector<datatype*>>& tpls
         tpls.push_back(values);
     }
 
-    page->pin_unpin = false;
+    page->unpin_page();
 }
 
 

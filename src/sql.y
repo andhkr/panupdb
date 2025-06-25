@@ -62,6 +62,7 @@ extern int  yylex (void);
 %type <insert> insert_statement
 %type <ast_node> insert_columns_clause insert_values_list column_reference column_reference_list
 %type <search_cond> where_clause_opt search_condition predicate comparison_predicate 
+%type <ast_node> update_item update_list update_statement delete_statement insert_tuples tuples
 /* precedence / associativity */
 %left OR
 %left AND
@@ -85,8 +86,8 @@ query
 sql_statement
     : select_statement ';'{$1->print_select();query_executor.process_select_stmt($1);}
     | insert_statement ';' {$1->print_insert();query_executor.process_insert_stmt($1);}
-    | update_statement
-    | delete_statement
+    | update_statement ';' {((update*)$1)->print_update();}  
+    | delete_statement  ';' {((Delete*)$1)->print_delete();}
     | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
     ;
@@ -122,7 +123,9 @@ select_item
         : expression {
             $$ = $1;
         }
-        | expression AS IDENTIFIER
+        | expression AS IDENTIFIER {
+
+        }
         | expression IDENTIFIER
         ;
 
@@ -141,8 +144,12 @@ table_reference
         tbl_name->first_table.reset($1);
         $$ = tbl_name ;
     }
-    | table_name IDENTIFIER {}
-    | table_name AS IDENTIFIER {}
+    | table_name IDENTIFIER {
+        
+    }
+    | table_name AS IDENTIFIER {
+
+    }
     | table_reference join_type JOIN table_reference ON search_condition {}
     ;
 
@@ -228,11 +235,11 @@ offset_clause_opt
     
 /* INSERT statement */
 insert_statement
-    : INSERT INTO table_name insert_columns_clause VALUES '(' insert_values_list ')' {
+    : INSERT INTO table_name insert_columns_clause VALUES insert_tuples {
         insert_stmt* insert_instance = new insert_stmt();
         insert_instance->table_name.reset($3);
         insert_instance->columns_to_insert = $4 ;
-        insert_instance->values = $7;
+        insert_instance->values = $6;
         $$ = insert_instance;
     }
     ;
@@ -241,6 +248,25 @@ insert_columns_clause
     : /* empty */ { $$ = nullptr;}
     | '(' column_reference_list ')' {
         $$ = $2;
+    }
+    ;
+
+insert_tuples
+    : tuples { $$ = $1;}
+    | tuples ',' tuples { 
+        AST* last = $1;
+        while (last->ptr_sibling != nullptr) {
+            last = last->ptr_sibling;
+        }
+        last->ptr_sibling = $3;
+        $$ = $1;
+    }
+    ;
+
+tuples : '(' insert_values_list ')' {
+    AST* tuple = new AST(nodetype::TUPLE);
+    tuple->ptr_children = $2;
+    $$ = tuple;
     }
     ;
 
@@ -259,29 +285,44 @@ insert_values_list
 /* UPDATE statement */
 update_statement
     : UPDATE table_name SET update_list where_clause_opt {
-        
+        update* update_stmt = new update();
+        update_stmt->table_name.reset($2);
+        update_stmt->update_list = $4;
+        update_stmt->where_clause.reset($5);
+        $$ = update_stmt;
     }
     ;
 
 update_list
     : update_item {
-
+        $$ = $1;
     }
     | update_list ',' update_item {
-
+        AST* last = $1;
+        while (last->ptr_sibling != nullptr) {
+            last = last->ptr_sibling;
+        }
+        last->ptr_sibling = $3;
+        $$ = $1;
     }
     ;
 
 update_item
     : column_reference '=' expression {
-
+        AST* item = new AST("set_value");
+        item->ptr_children = $1;
+        $1->ptr_sibling = $3;
+        $$ = $1;
     }
     ;
 
 /* DELETE statement */
 delete_statement
     : DELETE FROM table_name where_clause_opt {
-
+        Delete* stmt = new Delete();
+        stmt->table_name.reset($3);
+        stmt->where_clause.reset($4);
+        $$ = stmt; 
     }
     ;
 

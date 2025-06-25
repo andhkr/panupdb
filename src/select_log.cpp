@@ -8,7 +8,6 @@ logical_op::logical_op(logical_op_type t) : type(t) {}
 /*from clause: gives alias, joins and their condition*/
 scan::scan(std::string& tbl):logical_op(SCAN),table_name(tbl){}
 
-
 /*condition over which filtering occur*/
 
 selection::selection(std::unique_ptr<condition> pred):logical_op(SELECT),

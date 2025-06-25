@@ -44,7 +44,8 @@ batch selection_op::select(batch&& tbl_batch){
     batch filtered_row;
 
     for(auto& r:tbl_batch){
-        if(predicate->evaluate(r,tbl)){
+        
+        if(!predicate || predicate->evaluate(r,tbl)){
             filtered_row.push_back(r);
         }
     }
@@ -68,7 +69,7 @@ bool selection_op::next(std::future<batch>& res_hndl){
 
 scan_op::scan_op(table* t):tbl(t){
     datafile_header df_hdr;
-    std::cout<<catlg_man<<std::endl;
+    // std::cout<<catlg_man<<std::endl;
     cached_page* c_hdr_page = catlg_man->buffer_pool_manager.get_page(tbl->table_id,0);
     c_hdr_page->pin_unpin = true;
     df_hdr.deserialise(c_hdr_page->_c_page);
@@ -111,7 +112,7 @@ physical_op_uptr query_planner::plan(logical_op* loptr){
     switch(loptr->type){
         case SCAN:{
             table* tbl = catlg_man->catalog_file_list[static_cast<scan*>(loptr)->table_name];
-            std::cout<<tbl->table_id<<std::endl;
+            // std::cout<<tbl->table_id<<std::endl;
             return std::make_unique<scan_op>(tbl);
             break;
         }case SELECT:{
@@ -122,15 +123,22 @@ physical_op_uptr query_planner::plan(logical_op* loptr){
             physical_op_uptr select_child = plan(loptr->children[0].get());
             std::vector<int> col_index;
             table* tbl = static_cast<selection_op*>(select_child.get())->tbl;
-
-            for(auto& col:static_cast<projection*>(loptr)->columns_list){
-                col_index.push_back(tbl->index_of_col(col->identifier));
-            }
-            
             std::vector<std::string> clmn_list;
-            for(auto& node:static_cast<projection*>(loptr)->columns_list){
-                clmn_list.push_back(node->identifier);
-            };
+
+            if(static_cast<projection*>(loptr)->columns_list[0]->identifier == "*"){
+                for(auto& clmn : tbl->columns){
+                    clmn_list.push_back(clmn->column_name);
+                    col_index.push_back(tbl->index_of_col(clmn->column_name));
+                }
+            }else{
+                for(auto& col:static_cast<projection*>(loptr)->columns_list){
+                    col_index.push_back(tbl->index_of_col(col->identifier));
+                }
+                
+                for(auto& node:static_cast<projection*>(loptr)->columns_list){
+                    clmn_list.push_back(node->identifier);
+                };
+            }
 
             return std::make_unique<project_op>(tbl,col_index,std::move(select_child),clmn_list);
             break;

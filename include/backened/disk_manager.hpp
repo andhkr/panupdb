@@ -12,12 +12,13 @@
 #include <unordered_map>
 #include "page.hpp"
 #include <functional>  // for std::hash
+#include <thread>
+#include <mutex>
 
 extern std::unordered_map<uint,std::string> file_id_filename_lookup;
 /*
 to perform all communication with disk
 */
-
 /*utility function database specific*/
 namespace padbm{
     bool is_little_endian();
@@ -47,7 +48,6 @@ private:
     std::string file_name;
 };
 
-
 // #pragma once
 struct cached_page_id{
     uint file_id;
@@ -71,7 +71,6 @@ namespace std {
     };
 }
 
-
 struct cached_page{
     char _c_page[page_size]; /*cached page*/
     cached_page_id pid;
@@ -79,6 +78,11 @@ struct cached_page{
     cached_page* next=nullptr; /*pointer to next cached page*/
     bool referenced=false; /*recently used*/ 
     bool pin_unpin = false;/*currently in use by a component or not*/
+    std::mutex page_lock;
+    
+    cached_page()=default;
+    void pin_page();
+    void unpin_page();
 };
 
 /*page replacement policy --> clock sweep algorithm*/
@@ -88,10 +92,11 @@ struct clock_page_replacer{
     cached_page* page_list_head = nullptr;
     cached_page* page_list_tail = nullptr;
     cached_page* clock_handle = nullptr;
+    std::mutex page_replacer_lock;
 
     clock_page_replacer()=default;
 
-    clock_page_replacer(char* buffer_pool);
+    explicit clock_page_replacer(char* buffer_pool);
 
     cached_page* cache_in(uint file_id,uint page_id);
 

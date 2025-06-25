@@ -9,7 +9,7 @@
 
 constexpr size_t page_size  = 512;
 constexpr uint max_count_of_page_in_cache = 10;
-constexpr size_t database_cache_size =  (max_count_of_page_in_cache<<1)*page_size;
+constexpr size_t database_cache_size =  (max_count_of_page_in_cache)*(page_size<<1);
 
 struct page_header{
     size_t free_space_start_marker; /*pointer for start of free_space*/

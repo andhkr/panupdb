@@ -1,5 +1,6 @@
 #include "include/query_processor.hpp"
 #include "include/select_plan.hpp"
+#include <sstream>
 
 query_processor query_executor;
 
@@ -31,28 +32,44 @@ void query_processor::process_insert_stmt(insert_stmt* obj){
         uint NUM_CLMN = table->column_cts;
         
         std::vector<bool> nullbitmap(NUM_CLMN,true);
-        std::vector<datatype*> values(NUM_CLMN,nullptr);
+        std::vector<std::vector<datatype*>> values;
 
         if(obj->columns_to_insert){
             /*verifying the column constraints and creating NULLbitmap*/
             AST* colsptr = obj->columns_to_insert;
-            AST* valuesptr = obj->values;
+
+            std::vector<int> colindex;
+
             while(colsptr){
                 table_column* corresp_col = table->get_column_by_name(colsptr->identifier);
                 int index = table->index_of_col(corresp_col->column_name);
                 nullbitmap[index] = false;
-                datatype* col_value = reinterpret_cast<datatype*>(valuesptr->ptr_children);
-                values[index] = col_value;
                 colsptr = colsptr->ptr_sibling;
-                valuesptr = valuesptr->ptr_sibling;
+                colindex.push_back(index);
             }
 
-            for(uint i = 0;i<table->column_cts;++i){
-                table->columns[i]->check_constraints(values[i],table);
+
+            AST* valuesptr = obj->values;
+            while(valuesptr){
+                AST* tuple = valuesptr->ptr_children;
+                std::vector<datatype*> value(NUM_CLMN,nullptr);
+                int i = 0;
+                while(tuple){
+                    datatype* col_value = reinterpret_cast<datatype*>(tuple->ptr_children);
+                    value[colindex[i]] = col_value;
+                    ++i;
+                    tuple = tuple->ptr_sibling;    
+                }
+                values.push_back(value);
+                for(uint i = 0;i<table->column_cts;++i){
+                    table->columns[i]->check_constraints(value[i],table);
+                }
+                valuesptr = valuesptr->ptr_sibling;
             }
+            
             /*issue disk write to catalog manager*/
             catlg_man->write_tuple_to_table(table, values, nullbitmap);
-            table->tuples.push_back(values);
+            // table->tuples.push_back(values);
         }else{
 
         }
@@ -65,13 +82,15 @@ void query_processor::process_insert_stmt(insert_stmt* obj){
 
 void print_val(std::future<batch>&& res);
 
-void query_processor::process_select_stmt(select_node* obj){
+std::mutex cout_mtx;
 
+void query_processor::process_select_stmt(select_node* obj){
     logical_op_uptr loptr = get_logical_ast(obj);
     physical_op_uptr phy_root = query_planner::plan(loptr.get());
 
     project_op* root = static_cast<project_op*>(phy_root.get());
-    for(int i = 0;i<root->clmns.size();++i){
+    std::cout<<std::endl;
+    for(size_t i = 0;i<root->clmns.size();++i){
         std::cout<<root->clmns[i]<<"     ";
     }
     std::cout<<std::endl;
@@ -101,24 +120,31 @@ void query_processor::process_select_stmt(select_node* obj){
 
 void print_val(std::future<batch>&& res){
     batch tpls  = res.get();
-    for(int i = 0;i<tpls.size();++i){
+    std::stringstream ss;
+    for(size_t i = 0;i<tpls.size();++i){
         for(auto& v : tpls[i]){
             switch(v->get_type()){
                 case INT:{
-                    std::cout<<static_cast<inttype*>(v)->value<<"     ";
+                    ss<<static_cast<inttype*>(v)->value<<"     ";
                 }
                 break;
                 case VARCHAR:{
-                    std::cout<<static_cast<varchar*>(v)->value<<"     ";
+                    ss<<static_cast<varchar*>(v)->value<<"     ";
                     break;
                 }default:{
                     break;
                 }
             }
         }
-        std::cout<<std::endl;
+        ss<<std::endl;
     }
-    std::cout<<"called"<<std::endl;
+    
+    {
+        std::lock_guard<std::mutex> lk(cout_mtx);
+        std::string result = ss.str();
+        std::cout<<result;
+    }
+    // std::cout<<"called"<<std::endl;
 }
 void query_processor::print_table(table* tbl){
     tbl->print_tuples();

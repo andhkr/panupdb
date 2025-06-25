@@ -170,8 +170,10 @@ void select_node::print_select(){
     this->select_list->print_ast(2);
     std::cout<<"from_clause"<<std::endl;
     this->table_reference_list->first_table->print_ast(2);
-    std::cout<<"where_clause"<<std::endl;
-    where_clause->print(2);
+    if(where_clause){
+        std::cout<<"where_clause"<<std::endl;
+        where_clause->print(2);
+    }
 
 
 }
@@ -234,4 +236,21 @@ void insert_stmt::print_insert(){
         }
         curr = curr->ptr_sibling;
     }
+}
+
+void update::print_update(){
+    std::cout<<"UPDATE"<<std::endl;
+    std::cout<<table_name->identifier<<std::endl;
+    AST* curr = update_list;
+    while(curr){
+        curr->print_ast(0);
+        curr = curr->ptr_sibling;
+    }
+    where_clause->print(0);
+}
+
+void Delete::print_delete(){
+    std::cout<<"DELETE"<<std::endl;
+    std::cout<<table_name->identifier<<std::endl;
+    where_clause->print(0);
 }

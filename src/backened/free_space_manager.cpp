@@ -46,10 +46,10 @@ void free_space_manager::update_available_space(uint file_id,uint page_id,size_t
         
         PF_FSS[file_id].erase(page_it);
         page_location[file_id][page_id]  = PF_FSS[file_id].insert({available_space,page_id}).first;
-        std::cout<<available_space<<std::endl;
+        // std::cout<<available_space<<std::endl;
     }
     else {
-        std::cout<<"in add "<<available_space<<std::endl;
+        // std::cout<<"in add "<<available_space<<std::endl;
         add_page_space(file_id,page_id,available_space);
     }
 }
@@ -61,9 +61,9 @@ void free_space_manager::add_page_space(uint file_id,uint page_id,size_t availab
 int free_space_manager::get_page_with_available_space(size_t required_space,uint file_id){
     auto it = PF_FSS[file_id].lower_bound({required_space,0});
     
-    for(auto& v:PF_FSS[file_id]){
-        std::cout<<v.free_space<<" "<<v.page_id<<std::endl;
-    }
+    // for(auto& v:PF_FSS[file_id]){
+    //     std::cout<<v.free_space<<" "<<v.page_id<<std::endl;
+    // }
 
     return (it == PF_FSS[file_id].end()?-1:it->page_id);
 }

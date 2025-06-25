@@ -1,0 +1,11 @@
+\c
+INSERT INTO lok (id, devta, dham) VALUES (8, 'varundev', 'swarg');
+INSERT INTO lok (id, devta, dham) VALUES (9, 'agnidev', 'swarg');
+INSERT INTO lok (id, devta, dham) VALUES (10, 'bhagwan ganesh', 'kailash');
+INSERT INTO lok (id, devta, dham) VALUES (11, 'bhagwan karthikey', 'kailash');
+INSERT INTO lok (id, devta, dham) VALUES (12, 'nandi', 'kailash');
+INSERT INTO lok (id, devta, dham) VALUES (13, 'shesh', 'kshirsagar');
+INSERT INTO lok (id, devta, dham) VALUES (14, 'vashuki', 'kailash');
+INSERT INTO lok (id, devta, dham) VALUES (15, 'airavat', 'swarg');
+INSERT INTO lok (id, devta, dham) VALUES (16, 'kamdhenu', 'vashishth ashram');
+\exit

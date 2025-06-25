@@ -75,7 +75,7 @@ struct catalog_manager{
 
     // void database_query(std::string& cmd);
 
-    void write_tuple_to_table(table*,std::vector<datatype*>&,std::vector<bool>&);
+    void write_tuple_to_table(table*,std::vector<std::vector<datatype*>>&,std::vector<bool>&);
 
     size_t serialise_nullbitmap(char* buffer,std::vector<bool>& nullbitmap);
 

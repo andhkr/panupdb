@@ -15,6 +15,7 @@ enum nodetype{
     val,
     tbl_or_col,
     tbl,
+    TUPLE,
     TOTAL
 };
 
@@ -79,9 +80,9 @@ struct from_clause:public AST{
 
 struct select_node:public AST{
     // phase 1: select * / columns from a table
-    std::unique_ptr<AST> select_list;
-    std::unique_ptr<from_clause> table_reference_list;
-    std::unique_ptr<condition> where_clause;
+    std::unique_ptr<AST> select_list = nullptr;
+    std::unique_ptr<from_clause> table_reference_list = nullptr;
+    std::unique_ptr<condition> where_clause = nullptr;
     void print_select();
 };
 
@@ -109,6 +110,19 @@ struct insert_stmt:public AST{
     AST* values;
 
     void print_insert();
+};
+
+struct update : public AST{
+    std::unique_ptr<AST> table_name;
+    AST* update_list;
+    std::unique_ptr<condition> where_clause = nullptr;
+    void print_update();
+};
+
+struct Delete : public AST{
+    std::unique_ptr<AST> table_name;
+    std::unique_ptr<condition> where_clause = nullptr;
+    void print_delete();
 };
 
 #endif
