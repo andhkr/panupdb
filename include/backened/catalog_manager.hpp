@@ -59,6 +59,8 @@ struct catalog_manager{
     /*load the file_id_filename_lookup hash table*/
     /*i am giving this file a special name id_name.cat*/
     catalog_manager();
+    ~catalog_manager();
+    
     uint get_file_id();
     
     void load_file_lookup();

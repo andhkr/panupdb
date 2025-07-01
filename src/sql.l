@@ -41,6 +41,8 @@
 "LIKE"           { return TOKEN_LIKE; }
 "BETWEEN"        { return TOKEN_BETWEEN; }
 "CREATE"         { return TOKEN_CREATE; }
+"DATABASE"       { return TOKEN_DATABASE; }
+"CREATEDB"       { return TOKEN_CREATEDB; }
 "TABLE"          { return TOKEN_TABLE; }
 "INSERT"         { return TOKEN_INSERT; }
 "INTO"           { return TOKEN_INTO; }

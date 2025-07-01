@@ -33,6 +33,7 @@ void semantic_analyser::check_table_already_present(std::string& table_name){
 
 /*when try to get columns data*/
 void semantic_analyser::check_column_existence(std::string& table_name,std::string& column_name){
+    if(column_name == "*" && catlg_man->catalog_file_list[table_name]->column_cts ) return;
     if(!catlg_man->catalog_file_list[table_name]->column_present(column_name)){
         throw semantic_error("Error: Column " +column_name+ " in table "+table_name+" does not exists");
     }

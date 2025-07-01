@@ -109,6 +109,15 @@ catalog_manager::catalog_manager(){
     init_op_tables();
 }
 
+catalog_manager::~catalog_manager(){
+    write_file_lookup();
+    write_FSM_files();
+    buffer_pool_manager.flush_all_pages();
+    free(buffer_pool_manager.cache_buffer);
+    file_id_filename_lookup.clear();
+    database_path.clear();
+}
+
 void catalog_manager::load_file_lookup() {
     // --- Step 1: Read the lookup file header from page 0 ---
     cached_page* header_page = buffer_pool_manager.get_page(0, 0);

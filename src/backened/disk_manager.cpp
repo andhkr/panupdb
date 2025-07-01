@@ -152,7 +152,9 @@ cached_page* clock_page_replacer::evict_page(){
 }
 
 void clock_page_replacer::write_dirty_pages(){
+    std::lock_guard<std::mutex> lk(page_replacer_lock);
     cached_page* curr = page_list_head;
+    cached_page* prev = nullptr;
     while(curr){
         curr->pin_page();
         if(curr->dirty){
@@ -162,7 +164,9 @@ void clock_page_replacer::write_dirty_pages(){
             disk_man.close_file();
         }
         curr->unpin_page();
+        prev = curr;
         curr = curr->next;
+        prev->~cached_page();
     }
 }
 

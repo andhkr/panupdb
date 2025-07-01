@@ -2,6 +2,7 @@
 #include <cstring>
 #include "include/evaluate_comp_expr.hpp"
 #include "include/backened/table.hpp"
+#include <filesystem>
 
 And_cond::And_cond(condition* Lexpr, condition* Rexpr):L(Lexpr),R(Rexpr){}
 
@@ -258,4 +259,41 @@ void Delete::print_delete(){
     std::cout<<"DELETE"<<std::endl;
     std::cout<<table_name->identifier<<std::endl;
     where_clause->print(0);
+}
+
+create_database::create_database(std::string name):database_name(name){}
+
+void create_database::print_db(){
+    std::cout<<"CREATE"<<
+    " DATABASE"<<
+    " |- "<<database_name<<std::endl;
+}
+
+extern std::string database_root;
+
+void create_database::createdb(){
+    std::string dbpath = database_root + "/" + database_name;
+
+     /*create a directory of name database_name in database_root directory */
+    std::filesystem::create_directory(dbpath);
+
+    /*then in that directory create folders datafile,index file,catalog file,fsmfiles*/
+    std::filesystem::create_directory(dbpath + "/datafiles");
+    std::filesystem::create_directory(dbpath + "/indexfiles");
+    std::filesystem::create_directory(dbpath + "/catalogs");
+    std::filesystem::create_directory(dbpath + "/fsmfiles");
+}
+
+drop_database::drop_database(std::string name):database_name(name){}
+
+void drop_database::print_drop(){
+    std::cout<<"DROP"<<
+    " DATABASE"<<
+    " |- "<<database_name<<std::endl;
+}
+
+void drop_database::dropdb(){
+    if(!std::filesystem::remove_all(database_root+"/"+database_name)){
+        std::cerr<<"Unable to delete database please try again"<<std::endl;
+    }
 }

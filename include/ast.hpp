@@ -125,4 +125,18 @@ struct Delete : public AST{
     void print_delete();
 };
 
+struct create_database: AST{
+    std::string database_name;
+    create_database(std::string name);
+    void print_db();
+    void createdb();
+};
+
+struct drop_database: AST{
+    std::string database_name;
+    drop_database(std::string name);
+    void print_drop();
+    void dropdb();
+};
+
 #endif

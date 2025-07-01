@@ -41,7 +41,7 @@ extern int  yylex (void);
 %token SELECT FROM WHERE GROUP BY HAVING ORDER ASC DESC
 %token JOIN INNER OUTER LEFT RIGHT FULL ON AS
 %token AND OR NOT SQLNULL IS IN LIKE BETWEEN
-%token CREATE TABLE INSERT INTO VALUES UPDATE SET DELETE
+%token CREATE TABLE INSERT INTO VALUES UPDATE SET DELETE DATABASE CREATEDB
 %token INT CHAR VARCHAR NUMBER DATE TEXT
 %token PRIMARY KEY UNIQUE DEFAULT REFERENCES FOREIGN
 %token EXISTS LIMIT OFFSET DROP
@@ -62,7 +62,7 @@ extern int  yylex (void);
 %type <insert> insert_statement
 %type <ast_node> insert_columns_clause insert_values_list column_reference column_reference_list
 %type <search_cond> where_clause_opt search_condition predicate comparison_predicate 
-%type <ast_node> update_item update_list update_statement delete_statement insert_tuples tuples
+%type <ast_node> update_item update_list update_statement delete_statement insert_tuples tuples create_database drop_database
 /* precedence / associativity */
 %left OR
 %left AND
@@ -90,6 +90,8 @@ sql_statement
     | delete_statement  ';' {((Delete*)$1)->print_delete();}
     | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
+    | create_database ';' {((create_database*)$1)->print_db();((create_database*)$1)->createdb();}
+    | drop_database ';' {((drop_database*)$1)->print_drop();((drop_database*)$1)->dropdb();} 
     ;
 
 select_statement
@@ -557,6 +559,20 @@ term
     }
     ;
 
+create_database : CREATE DATABASE IDENTIFIER {
+        AST* db = new create_database(std::string($3));
+        $$ = db;
+    }
+    | CREATEDB IDENTIFIER {
+        AST* db = new create_database(std::string($2));
+        $$ = db;
+    }
+    ;
+drop_database : DROP DATABASE IDENTIFIER {
+        AST* db = new drop_database(std::string($3));
+        $$ = db;
+    }
+    ;
 function_call
     : IDENTIFIER '(' ')' {}
     | IDENTIFIER '(' function_arg_list ')' {}
