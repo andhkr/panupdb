@@ -253,7 +253,7 @@ insert_columns_clause
 
 insert_tuples
     : tuples { $$ = $1;}
-    | tuples ',' tuples { 
+    | insert_tuples ',' tuples { 
         AST* last = $1;
         while (last->ptr_sibling != nullptr) {
             last = last->ptr_sibling;

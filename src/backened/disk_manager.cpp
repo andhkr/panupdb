@@ -55,12 +55,9 @@ void disk_manager::read(uint page_id,char* buffer){
     std::memset(buffer,0,page_size);
     size_t offset = page_id*page_size;
     ssize_t bytes = pread(fd,buffer,page_size,offset);
-    // if(bytes == 0){
-    //     // std::cout<<"page id "<< page_id << "not available"<<std::endl;
-    // }
     /*error check to implemented*/
     if(bytes<0){
-        throw std::runtime_error(std::strerror(errno));
+        fprintf(stderr,"Data is Not Completely read please try again\n");
     }
 }
 
@@ -68,9 +65,10 @@ void disk_manager::write(uint page_id,const char* buffer){
     size_t offset = page_id*page_size;
     ssize_t bytes = pwrite(fd,buffer,page_size,offset);
     /*error check to implemented*/
-    if(bytes<0){
-        throw std::runtime_error(std::strerror(errno));
+    if(bytes!=page_size){
+        fprintf(stderr,"Incomplete Page Write Please try again");
     }
+    fsync(fd);
 }
 
 void disk_manager::close_file(){
@@ -100,19 +98,15 @@ clock_page_replacer::clock_page_replacer(char* buffer_pool):buffer_pool(buffer_p
     page_list_head = reinterpret_cast<cached_page*>(buffer_pool);
     page_list_tail = reinterpret_cast<cached_page*>(buffer_pool);
     char* start  = buffer_pool;
-    std::cout<<"cache: "<<sizeof(cached_page)<<std::endl;
     for(;(start+(page_size<<1))<(buffer_pool+database_cache_size);start += (page_size<<1)){
         new (reinterpret_cast<void*>(start)) cached_page;
         reinterpret_cast<cached_page*>(start)->next = reinterpret_cast<cached_page*>(start+(page_size<<1));
     }
     new (reinterpret_cast<void*>(start)) cached_page;
     reinterpret_cast<cached_page*>(start)->next = nullptr;
-    std::cout<<"cache:2 "<<sizeof(cached_page)<<std::endl;
 }
 
-int i = 0;
 cached_page* clock_page_replacer::cache_in(uint file_id,uint page_id){
-    std::cout<<"cache: "<<i<<std::endl;
     std::lock_guard<std::mutex> lk(page_replacer_lock);
     cached_page* new_page = nullptr;
     if(count_page == max_count_of_page_in_cache){
@@ -146,22 +140,34 @@ cached_page* clock_page_replacer::evict_page(){
             clock_handle = clock_handle->next;
         }
     }
+
     if(clock_handle->dirty){
         std::string filename = file_id_filename_lookup[clock_handle->pid.file_id];
         disk_manager disk_man(filename);
         disk_man.write(clock_handle->pid.page_id,clock_handle->_c_page);
         disk_man.close_file();
-        /*evicting from lookup also*/
-        // std::cout<<"evicting:"<<clock_handle->pid.file_id<<std::endl;
-            page_lookup.erase(clock_handle->pid);
     } 
-    // std::cout<<"replacer has replace these things"<< clock_handle->pid.file_id <<    clock_handle->pid.page_id <<std::endl;
-    // std::cout<<clock_handle->dirty<<std::endl;    
+    page_lookup.erase(clock_handle->pid);
     return clock_handle;
 }
 
+void clock_page_replacer::write_dirty_pages(){
+    cached_page* curr = page_list_head;
+    while(curr){
+        curr->pin_page();
+        if(curr->dirty){
+            std::string filename = file_id_filename_lookup[curr->pid.file_id];
+            disk_manager disk_man(filename);
+            disk_man.write(curr->pid.page_id,curr->_c_page);
+            disk_man.close_file();
+        }
+        curr->unpin_page();
+        curr = curr->next;
+    }
+}
+
 page_cache_manager::page_cache_manager(){
-    int result = posix_memalign(&cache_buffer,page_size,database_cache_size );
+    int result = posix_memalign(&cache_buffer,page_size,database_cache_size);
     if(result){
         perror("memory allocation failed");
         exit(EXIT_FAILURE);
@@ -174,13 +180,11 @@ cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
     bool page_not_avail = true;
     {
         std::lock_guard<std::mutex> lk(page_lookup_lock);
-        page_lookup.find({file_id,page_id});
         page_not_avail = page_lookup.find({file_id,page_id}) == page_lookup.end();
     }
     if(page_not_avail){
         /*pid have table id and page id*/
         std::string filename = file_id_filename_lookup[file_id];
-        // std::cout<<filename<<" kya nup "<<page_id<<std::endl;
         disk_manager disk_man(filename);
         cached_page* page_location_in_cache = page_replacer.cache_in(file_id,page_id);
         disk_man.read(page_id,page_location_in_cache->_c_page);
@@ -203,16 +207,5 @@ cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
 }
 
 void page_cache_manager::flush_all_pages(){
-    for(auto& page:page_lookup){
-        
-        cached_page* c_page = page.second;
-        if(!c_page->dirty) continue;
-        std::string filename = file_id_filename_lookup[page.first.file_id];
-        disk_manager disk_man(filename);
-        // std::cout<<"page id " <<page.first.page_id<<" of "<<filename<<" is flushed"<<std::endl;
-        // std::cout<<c_page->pid.page_id<<std::endl;
-        disk_man.write(c_page->pid.page_id,c_page->_c_page);
-        disk_man.close_file();
-    }
+   page_replacer.write_dirty_pages();
 }
-

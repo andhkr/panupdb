@@ -39,21 +39,9 @@ enum return_type{
 return_type cl_cmd_executor(std::string& cmd){
     std::string prefix = cmd.substr(0,2);
     if(prefix == "\\c") {
-        /*verify that that exists other wise give create database cmd*/
-        /*
-        std::string database_name = trim(cmd.substr(2));
-        auto it = std::find(databases.begin(),databases.end(),database_name);
-        if(it == databases.end()){
-            std::cout<<"database : "<<database_name<<" does not exist"<<std::endl;
-            return false;
-        }
-        database_path.clear();
-        database_path = "databases";
-        */
 
         database_path = database_path + "/" + "anup"+"/";
         catlg_man = new catalog_manager();
-        catlg_man->file_id = 0;
         connected_to_a_database = true;
     }else if (prefix == "\\d"){
         std::string table_name = trim(cmd.substr(2));
@@ -74,6 +62,7 @@ return_type cl_cmd_executor(std::string& cmd){
     }
     else if(trim(cmd.substr(1)) == "exit"){
         catlg_man->write_file_lookup();
+        catlg_man->write_FSM_files();
         catlg_man->buffer_pool_manager.flush_all_pages();
         return exit_while;
     }else return query_execute;
@@ -98,21 +87,52 @@ void databases_loading(){
     }
 }
 
+void get_sql_query(std::string& query) {
+    char c;
+    while (std::cin.get(c)) { 
+        if(c == '\n') continue;
+        if (c == ';'){
+            query.push_back(c);
+            break;
+        }
+        query.push_back(c);
+    }
+    std::cin.ignore();
+}
+
+void get_database_cmd(std::string& cmd){
+    char c;
+    while (std::cin.get(c)) { 
+        if (c == '\n') break;
+        cmd.push_back(c);
+    }
+}
+
+void read_command(std::string& cmds){
+    char c;
+    std::cin.get(c);
+    cmds.push_back(c);
+    if(c == '\\'){
+        get_database_cmd(cmds);
+    }else 
+    get_sql_query(cmds);
+}
+
 int main(int argc, char** argv) {
     database_path = "databases";
     /*load databases*/
     databases_loading();
 
     bool run = true;
+
     while (run) {
         std::cout << "induman@panupdb$ ";
-        std::string query;
-        std::getline(std::cin, query);
-
-        switch(cl_cmd_executor(query)){
+        std::string cmds;
+        read_command(cmds);
+        switch(cl_cmd_executor(cmds)){
             case query_execute:{
                 // if sql query Pass the string to lexer/parser
-                yy_scan_string(query.c_str());   // Let Flex scan the input string
+                yy_scan_string(cmds.c_str());   // Let Flex scan the input string
                 yyparse();                       // Parse it
                 yylex_destroy();                 // Reset scanner
                 break;

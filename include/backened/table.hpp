@@ -64,6 +64,8 @@ struct table{
     table_column* get_column(std::string&);
 
     void print_tuples();
+
+    bool column_present(std::string&);
 };
 
 #endif

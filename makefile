@@ -74,7 +74,13 @@ $(LEXER_CPP): $(SRC_DIR)/sql.l $(PARSER_HPP)
 
 # Clean up generated files
 clean:
-	rm -rf $(BUILD_DIR)/* $(BIN_DIR)/* 
+	@read -p "Are you sure you want to clean all build files? (y/n): " ans; \
+	if [ "$$ans" = "y" ] || [ "$$ans" = "Y" ]; then \
+		echo "Cleaning..."; \
+		rm -rf $(BUILD_DIR)/* $(BIN_DIR)/* \
+	else \
+		echo "Clean aborted."; \
+	fi
 
 # Rebuild everything
 rebuild: clean all

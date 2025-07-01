@@ -101,6 +101,8 @@ struct clock_page_replacer{
     cached_page* cache_in(uint file_id,uint page_id);
 
     cached_page* evict_page();
+    
+    void write_dirty_pages();
 };
 
 struct page_cache_manager{

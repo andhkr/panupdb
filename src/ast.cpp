@@ -219,24 +219,29 @@ void insert_stmt::print_insert(){
         this->columns_to_insert->print_ast(1);
     }
     std::cout<<"VALUES"<<std::endl;
-    AST* curr = this->values;
-    while(curr){
-        switch(((datatype*)(curr->ptr_children))->get_type()){
-            case INT:{
-                std::cout<<"  |- "<<(((inttype*)(curr->ptr_children))->value)<<std::endl;
-                break;
+    AST* tuples = this->values;
+    while(tuples){
+        AST* curr = tuples->ptr_children;
+        while(curr){
+            switch(((datatype*)(curr->ptr_children))->get_type()){
+                case INT:{
+                    std::cout<<"  |- "<<(((inttype*)(curr->ptr_children))->value)<<std::endl;
+                    break;
+                }
+                case VARCHAR:{
+                    std::cout<<"  |- "<<(((varchar*)(curr->ptr_children))->value)<<std::endl;
+                    break;
+                }
+                default:{
+                    break;
+                }
             }
-            case VARCHAR:{
-                std::cout<<"  |- "<<(((varchar*)(curr->ptr_children))->value)<<std::endl;
-                break;
-            }
-            default:{
-                break;
-            }
+            curr = curr->ptr_sibling;
         }
-        curr = curr->ptr_sibling;
+        tuples = tuples->ptr_sibling;
     }
 }
+
 
 void update::print_update(){
     std::cout<<"UPDATE"<<std::endl;

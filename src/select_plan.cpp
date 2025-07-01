@@ -77,7 +77,7 @@ scan_op::scan_op(table* t):tbl(t){
     total_batch = (page_cnts + MAX_BATCH_SIZE - 1)/MAX_BATCH_SIZE;
     curr_batch  = 1;
     last_page = page_cnts;
-    c_hdr_page->pin_unpin = false;
+    c_hdr_page->unpin_page();
 }
 
 batch scan_op::scan_task(uint batch_id){
@@ -111,8 +111,8 @@ extern catalog_manager* catlg_man;
 physical_op_uptr query_planner::plan(logical_op* loptr){
     switch(loptr->type){
         case SCAN:{
+            /*check whether table present or not*/
             table* tbl = catlg_man->catalog_file_list[static_cast<scan*>(loptr)->table_name];
-            // std::cout<<tbl->table_id<<std::endl;
             return std::make_unique<scan_op>(tbl);
             break;
         }case SELECT:{

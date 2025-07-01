@@ -34,7 +34,6 @@ std::pair<file_type,std::string> get_tablename_and_type(const std::string& path)
     else{
         ftype = INDEX;
     }
-
     return {ftype,filename.substr(0,last_dot)};  // strip extension
 }
 
@@ -104,7 +103,6 @@ size_t catalog_file_header::get_total_object_size(){
 page_id of header will be zero,
 page_id will be increasing order and incresed by 1
 */
-
 catalog_manager::catalog_manager(){
     file_id_filename_lookup[0]=database_path +  file_id_filename_hash_table;
     load_file_lookup();
@@ -218,7 +216,7 @@ void catalog_manager::create_table(table* obj) {
     data_hdr.serialise(data_header_page->_c_page);
 
     data_header_page->unpin_page();
-
+    /*relation : data_file_id + 1 = fsm_file+id*/
     uint fsm_file_id = get_file_id();
     std::string fsmfile_name = database_path + "fsmfile/" + obj->table_name + ".fs";
     file_id_filename_lookup[fsm_file_id] = fsmfile_name;
@@ -231,7 +229,6 @@ void catalog_manager::create_table(table* obj) {
     fsm_hdr.serialise(fsm_header_page->_c_page);
 
     fsm_header_page->unpin_page();
-
 
     // --- Step 2: Create and initialize the catalog file for this table ---
     uint catalog_file_id = get_file_id();
@@ -256,7 +253,6 @@ void catalog_manager::create_table(table* obj) {
         // Grab a fresh page for catalog page page_id
         cached_page* page = buffer_pool_manager.get_page(catalog_file_id, page_id);
         page->dirty     = true;
-        page->pin_unpin = true;
 
         page_header hdr(page_id);
         char*       payload = page->_c_page;
@@ -265,11 +261,9 @@ void catalog_manager::create_table(table* obj) {
         while (nextColumnIndex < numColumns) {
             table_column* column    = obj->columns[nextColumnIndex];
             size_t        rowSize   = column->get_total_sizeof_object();
-            size_t        slotSize  = (2 * sizeof(size_t)); // offset + size fields
-
+            size_t        slotSize  = slot::get_sizeof_slot_obj(); // offset + size fields
             // Check: do we have room for slotMeta + rowData?
             // Total bytes needed = slotSize + rowSize
-            //
             // free space is from curr_offset ... free_space_start_marker (exclusive)
             // so the condition becomes:
             if ((hdr.curr_offset + slotSize + rowSize) <= hdr.free_space_start_marker) {
@@ -371,7 +365,6 @@ void catalog_manager::write_file_lookup() {
     cached_page* header_page = buffer_pool_manager.get_page(0, page_id);
     header_page->dirty     = true;
 
-
     // Iterate over every (file_id → filename) pair
     auto it = file_id_filename_lookup.begin();
     auto end = file_id_filename_lookup.end();
@@ -381,7 +374,6 @@ void catalog_manager::write_file_lookup() {
         ++page_id;
         cached_page* page = buffer_pool_manager.get_page(0, page_id);
         page->dirty     = true;
-        page->pin_unpin = true;
 
         page_header hdr(page_id);
         char*       buf = page->_c_page;
@@ -392,9 +384,8 @@ void catalog_manager::write_file_lookup() {
             uint    file_id   = it->first;
             const std::string& filename = it->second;
             id_name entry(file_id, filename);
-
             size_t entry_size = entry.get_total_sizeof_object();      // bytes needed to store (file_id + filename)
-            size_t slot_size  = slot().get_sizeof_object();           // bytes needed for slot metadata
+            size_t slot_size  = slot::get_sizeof_slot_obj();           // bytes needed for slot metadata
 
             // Check: can we pack both slot metadata and row data without overflow?
             // Total needed = slot_size + entry_size,
@@ -490,9 +481,13 @@ void catalog_manager::write_tuple_to_table(table* tbl,std::vector<std::vector<da
         free_space_required += nullbitmap.size()*sizeof(uint8_t)+sizeof(size_t);
 
         size_t slot_size = slot::get_sizeof_slot_obj();
+        /*using the relaion between fsm and data file, needs to be changed when multiple client works*/
+        std::cout<<file_id_filename_lookup[tbl->table_id]<<std::endl;
+        std::cout<<file_id_filename_lookup[tbl->table_id + 1]<<std::endl;
 
-        int page_available = FSM.get_page_with_available_space((free_space_required+slot_size),tbl->table_id);
+        int page_available = FSM.get_page_with_available_space((free_space_required+slot_size),tbl->table_id+1);
 
+        std::cout<<page_available<<std::endl;
         bool old_page = true;
         if(page_available == -1){
             page_available = df_hdr.page_counts;
@@ -528,7 +523,7 @@ void catalog_manager::write_tuple_to_table(table* tbl,std::vector<std::vector<da
         pg_hdr.serialise(free_space_page->_c_page);
         free_space_page->unpin_page();
 
-        FSM.update_available_space(tbl->table_id,page_available,(pg_hdr.free_space_start_marker-pg_hdr.curr_offset));
+        FSM.update_available_space(tbl->table_id+1,page_available,(pg_hdr.free_space_start_marker-pg_hdr.curr_offset));
     }
 }
 
@@ -544,7 +539,6 @@ void catalog_manager::read_table(table* tbl){
         page->pin_unpin = true;
         page_header pg_hdr;
         pg_hdr.deserialise(page->_c_page);
-
 
         char* slot_ptr = page->_c_page + pg_hdr.start_offset;
         char* slot_ptr_end = page->_c_page+pg_hdr.curr_offset;
@@ -574,9 +568,9 @@ void catalog_manager::read_table(table* tbl){
 }
 
 void catalog_manager::write_FSM_files(){
+    size_t slot_size  = slot::get_sizeof_slot_obj();
     for(auto& FSS : FSM.PF_FSS){
         file_id = FSS.first;
-
         uint page_counts = 0;
         auto it = FSS.second.begin();
         auto end = FSS.second.end();
@@ -588,10 +582,10 @@ void catalog_manager::write_FSM_files(){
             for(;it != end;++it){
                 
                 size_t size = (*it).get_object_total_size();
-                if((pg_hdr.curr_offset + size) <= pg_hdr.free_space_start_marker){
+                if((pg_hdr.curr_offset + size + slot_size) <= pg_hdr.free_space_start_marker){
                     size_t row_offset = pg_hdr.free_space_start_marker - size;
                     (*it).serialise(page->_c_page + row_offset);
-
+                    std::cout<<it->page_id<<std::endl;
                     slot s(row_offset,size);
                     pg_hdr.curr_offset += s.serialise(page->_c_page + pg_hdr.curr_offset);
                     pg_hdr.free_space_start_marker = row_offset;

@@ -1,10 +1,13 @@
 #include "include/query_processor.hpp"
 #include "include/select_plan.hpp"
+#include "include/semantic.hpp"
 #include <sstream>
 
 query_processor query_executor;
 
 void query_processor::process_create_table(create_table* obj){
+try{    
+    semantic_analysis.check_table_already_present(obj->table_name->identifier);   
     table* tbl = new table;
     tbl->table_name = std::move(obj->table_name->identifier);
     std::vector<table_column*> columns;
@@ -20,64 +23,64 @@ void query_processor::process_create_table(create_table* obj){
     tbl->column_cts = ct;
 
     catlg_man->create_table(tbl);
-    return;
+}catch(const semantic_error& e){
+    std::cout<<e.what()<<std::endl;
+}
 }
 
 void query_processor::process_insert_stmt(insert_stmt* obj){
-    /*step1:search table in which tuples will be inserted*/
-    if(catlg_man->catalog_file_list.find(obj->table_name->identifier) != catlg_man->catalog_file_list.end()){
-        /*step2: now check constraints for each column for data to be inserted */
+try{
+    semantic_analysis.check_table_existence(obj->table_name->identifier);
 
-        table* table = catlg_man->catalog_file_list[obj->table_name->identifier];
-        uint NUM_CLMN = table->column_cts;
+    table* table = catlg_man->catalog_file_list[obj->table_name->identifier];
+    uint NUM_CLMN = table->column_cts;
+    
+    std::vector<bool> nullbitmap(NUM_CLMN,true);
+    std::vector<std::vector<datatype*>> values;
+
+    if(obj->columns_to_insert){
+        /*verifying the column constraints and creating NULLbitmap*/
+        AST* colsptr = obj->columns_to_insert;
+
+        std::vector<int> colindex;
+
+        while(colsptr){
+            semantic_analysis.check_column_existence(table->table_name,colsptr->identifier);
+            table_column* corresp_col = table->get_column_by_name(colsptr->identifier);
+            int index = table->index_of_col(corresp_col->column_name);
+            nullbitmap[index] = false;
+            colsptr = colsptr->ptr_sibling;
+            colindex.push_back(index);
+        }
+
+
+        AST* valuesptr = obj->values;
+        while(valuesptr){
+            AST* tuple = valuesptr->ptr_children;
+            std::vector<datatype*> value(NUM_CLMN,nullptr);
+            int i = 0;
+            while(tuple){
+                datatype* col_value = reinterpret_cast<datatype*>(tuple->ptr_children);
+                value[colindex[i]] = col_value;
+                ++i;
+                tuple = tuple->ptr_sibling;    
+            }
+            values.push_back(value);
+            for(uint i = 0;i<table->column_cts;++i){
+                table->columns[i]->check_constraints(value[i],table);
+            }
+            valuesptr = valuesptr->ptr_sibling;
+        }
         
-        std::vector<bool> nullbitmap(NUM_CLMN,true);
-        std::vector<std::vector<datatype*>> values;
-
-        if(obj->columns_to_insert){
-            /*verifying the column constraints and creating NULLbitmap*/
-            AST* colsptr = obj->columns_to_insert;
-
-            std::vector<int> colindex;
-
-            while(colsptr){
-                table_column* corresp_col = table->get_column_by_name(colsptr->identifier);
-                int index = table->index_of_col(corresp_col->column_name);
-                nullbitmap[index] = false;
-                colsptr = colsptr->ptr_sibling;
-                colindex.push_back(index);
-            }
-
-
-            AST* valuesptr = obj->values;
-            while(valuesptr){
-                AST* tuple = valuesptr->ptr_children;
-                std::vector<datatype*> value(NUM_CLMN,nullptr);
-                int i = 0;
-                while(tuple){
-                    datatype* col_value = reinterpret_cast<datatype*>(tuple->ptr_children);
-                    value[colindex[i]] = col_value;
-                    ++i;
-                    tuple = tuple->ptr_sibling;    
-                }
-                values.push_back(value);
-                for(uint i = 0;i<table->column_cts;++i){
-                    table->columns[i]->check_constraints(value[i],table);
-                }
-                valuesptr = valuesptr->ptr_sibling;
-            }
-            
-            /*issue disk write to catalog manager*/
-            catlg_man->write_tuple_to_table(table, values, nullbitmap);
-            // table->tuples.push_back(values);
+        /*issue disk write to catalog manager*/
+        catlg_man->write_tuple_to_table(table, values, nullbitmap);
+        // table->tuples.push_back(values);
         }else{
 
         }
-
-    }else{
-        fprintf(stderr,"Table Does not exists\n");
-        exit(EXIT_FAILURE);
-    }
+}catch (const semantic_error& e){
+    std::cout<<e.what()<<std::endl;
+}
 }
 
 void print_val(std::future<batch>&& res);
@@ -85,6 +88,7 @@ void print_val(std::future<batch>&& res);
 std::mutex cout_mtx;
 
 void query_processor::process_select_stmt(select_node* obj){
+try{
     logical_op_uptr loptr = get_logical_ast(obj);
     physical_op_uptr phy_root = query_planner::plan(loptr.get());
 
@@ -116,6 +120,9 @@ void query_processor::process_select_stmt(select_node* obj){
     for(auto& print_future:print_val_future){
         print_future.get();
     }
+}catch (const semantic_error& e ){
+    std::cout<<e.what()<<std::endl;
+}
 }
 
 void print_val(std::future<batch>&& res){
@@ -144,8 +151,8 @@ void print_val(std::future<batch>&& res){
         std::string result = ss.str();
         std::cout<<result;
     }
-    // std::cout<<"called"<<std::endl;
 }
+
 void query_processor::print_table(table* tbl){
     tbl->print_tuples();
 }

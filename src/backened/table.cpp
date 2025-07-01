@@ -19,8 +19,8 @@ size_t table_column::serialise(char* buffer){
         offset += size;
     };
 
-    size_t column_name_len = column_name.size();
-
+    size_t column_name_len = column_name.size();    
+    
     write(&column_name_len,sizeof(column_name_len));
     write(column_name.data(),column_name_len);
     size_t bytes_written = type->serialise(buffer+offset);
@@ -57,6 +57,7 @@ size_t table_column::deserialise(const char* buffer){
 
     read(&column_name_len,sizeof(column_name_len));
     column_name.resize(column_name_len);
+    
     read(&column_name[0],column_name_len);
 
     type = get_polymorphic_obj(buffer+offset);
@@ -103,7 +104,7 @@ size_t table_column::get_total_sizeof_object(){
     
     column_constraints* curr = constraints;
     while(curr){
-        if(constraints->constrt_type()==NOT_NULL || constraints->constrt_type()==PRIMARY_KEY){
+        if(curr->constrt_type()==NOT_NULL || curr->constrt_type()==PRIMARY_KEY){
             nullable = false;
         }
         else if(curr->constrt_type()==DEFAULT_VALUE){
@@ -111,7 +112,7 @@ size_t table_column::get_total_sizeof_object(){
             dflt_value = static_cast<default_value*>(curr)->value;
             total+= dflt_value->get_total_object_size();
         }
-        total+= constraints->get_total_sizeof_object();
+        total+= curr->get_total_sizeof_object();
         curr = curr->next_constraint;
         total_constraints++;
     }
@@ -127,6 +128,7 @@ void table_column::check_constraints(datatype* col_value,table* tbl){
         curr_constrnt = curr_constrnt->next_constraint;
     }
 }
+
 
 #include <iomanip>  // for std::setw
 
@@ -230,6 +232,10 @@ int table::index_of_col(std::string& col_name){
         if(columns[i]->column_name == col_name) return i;
     }
     return -1;
+}
+
+bool table::column_present(std::string& col_name){
+    return index_of_col(col_name)>=0;
 }
 
 #include <iomanip>   // for std::setw, std::left

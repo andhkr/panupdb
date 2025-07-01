@@ -1,7 +1,8 @@
 #include "include/select_log.hpp"
-
+#include "include/semantic.hpp"
 
 std::unordered_map<std::string,std::string> alias_resolver;
+
 
 logical_op::logical_op(logical_op_type t) : type(t) {}
 
@@ -27,38 +28,29 @@ void projection::add_column(AST* clmn){
 }
 
 logical_op_uptr get_logical_ast(select_node* ast){
+    try{
+        AST* curr = ast->table_reference_list.get();
 
-    AST* curr = ast->table_reference_list.get();
-    std::unique_ptr<logical_op> scanobj = std::make_unique<scan>(static_cast<from_clause*>(curr)->first_table->identifier);
+        std::string table_name = static_cast<from_clause*>(curr)->first_table->identifier;
 
-    // while(curr){
-    //     switch(curr->type){
-    //         case tbl:{
-    //             if(curr->ptr_children){
-    //                 alias_resolver[curr->identifier] = curr->ptr_children->identifier;
-    //             }else{
-    //                 alias_resolver[curr->identifier] = curr->identifier;
-    //             }
-    //             static_cast<scan*>(scanobj.get())->table_name = curr->identifier;
-    //             std::cout<<curr->identifier<<std::endl;
-    //             break;
+        /*currently only one table*/
+        semantic_analysis.check_table_existence(table_name);
 
-    //         }
-    //         default:{
-    //             break;
-    //         }
-    //     }
-    //     curr = curr->ptr_sibling;
-    // }
+        std::unique_ptr<logical_op> scanobj = std::make_unique<scan>(table_name);
 
-    logical_op_uptr filter   = std::make_unique<selection>(std::move(ast->where_clause),std::move(scanobj));
-    logical_op_uptr proj_obj = std::make_unique<projection>(std::move(filter));
-
-    curr = ast->select_list.get();
-    while(curr){
-        static_cast<projection*>(proj_obj.get())->columns_list.push_back(curr);
-        curr = curr->ptr_sibling;
+        logical_op_uptr filter   = std::make_unique<selection>(std::move(ast->where_clause),std::move(scanobj));
+        logical_op_uptr proj_obj = std::make_unique<projection>(std::move(filter));
+        
+        
+        curr = ast->select_list.get();
+        while(curr){
+            static_cast<projection*>(proj_obj.get())->columns_list.push_back(curr);
+            semantic_analysis.check_column_existence(table_name,curr->identifier);
+            curr = curr->ptr_sibling;
+        }
+        
+        return proj_obj;
+    }catch (const semantic_error& e){
+        throw e;
     }
-    
-    return proj_obj;
 }
