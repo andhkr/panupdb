@@ -594,7 +594,6 @@ void catalog_manager::write_FSM_files(){
                 if((pg_hdr.curr_offset + size + slot_size) <= pg_hdr.free_space_start_marker){
                     size_t row_offset = pg_hdr.free_space_start_marker - size;
                     (*it).serialise(page->_c_page + row_offset);
-                    std::cout<<it->page_id<<std::endl;
                     slot s(row_offset,size);
                     pg_hdr.curr_offset += s.serialise(page->_c_page + pg_hdr.curr_offset);
                     pg_hdr.free_space_start_marker = row_offset;

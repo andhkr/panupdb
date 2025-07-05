@@ -146,8 +146,11 @@ cached_page* clock_page_replacer::evict_page(){
         disk_manager disk_man(filename);
         disk_man.write(clock_handle->pid.page_id,clock_handle->_c_page);
         disk_man.close_file();
-    } 
-    page_lookup.erase(clock_handle->pid);
+    }
+    {
+        std::lock_guard<std::mutex> lk(page_lookup_lock);
+        page_lookup.erase(clock_handle->pid);
+    }
     return clock_handle;
 }
 
@@ -212,4 +215,5 @@ cached_page* page_cache_manager::get_page(uint file_id,uint page_id){
 
 void page_cache_manager::flush_all_pages(){
    page_replacer.write_dirty_pages();
+   page_lookup.clear();
 }

@@ -90,8 +90,8 @@ sql_statement
     | delete_statement  ';' {((Delete*)$1)->print_delete();}
     | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
-    | create_database ';' {((create_database*)$1)->print_db();((create_database*)$1)->createdb();}
-    | drop_database ';' {((drop_database*)$1)->print_drop();((drop_database*)$1)->dropdb();} 
+    | create_database ';' {((create_database*)$1)->print_db();}
+    | drop_database ';' {((drop_database*)$1)->print_drop();} 
     ;
 
 select_statement

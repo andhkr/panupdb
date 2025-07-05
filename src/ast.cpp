@@ -261,12 +261,23 @@ void Delete::print_delete(){
     where_clause->print(0);
 }
 
+#include <unordered_set>
+extern std::unordered_set<std::string> databases_created;
+extern std::string current_database;
+extern bool connected_to_a_database;
+
 create_database::create_database(std::string name):database_name(name){}
 
 void create_database::print_db(){
+    if(databases_created.find(database_name)!=databases_created.end()){
+        std::cerr<<"Database already Exists\n";
+        return;
+    }
     std::cout<<"CREATE"<<
     " DATABASE"<<
     " |- "<<database_name<<std::endl;
+    createdb();
+    databases_created.insert(database_name);
 }
 
 extern std::string database_root;
@@ -278,18 +289,28 @@ void create_database::createdb(){
     std::filesystem::create_directory(dbpath);
 
     /*then in that directory create folders datafile,index file,catalog file,fsmfiles*/
-    std::filesystem::create_directory(dbpath + "/datafiles");
-    std::filesystem::create_directory(dbpath + "/indexfiles");
-    std::filesystem::create_directory(dbpath + "/catalogs");
-    std::filesystem::create_directory(dbpath + "/fsmfiles");
+    std::filesystem::create_directory(dbpath + "/datafile");
+    std::filesystem::create_directory(dbpath + "/indexfile");
+    std::filesystem::create_directory(dbpath + "/catalog");
+    std::filesystem::create_directory(dbpath + "/fsmfile");
 }
 
 drop_database::drop_database(std::string name):database_name(name){}
 
 void drop_database::print_drop(){
+    if(databases_created.find(database_name)==databases_created.end()){
+        std::cerr<<"Database Does Not Exists\n";
+        return;
+    }
+    if(connected_to_a_database && database_name == current_database ){
+        std::cerr<<"ERROR:  cannot drop the currently open database"<<std::endl;
+        return;
+    }
     std::cout<<"DROP"<<
     " DATABASE"<<
     " |- "<<database_name<<std::endl;
+    dropdb();
+    databases_created.erase(database_name);
 }
 
 void drop_database::dropdb(){

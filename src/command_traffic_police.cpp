@@ -94,6 +94,7 @@ void cli_command_executor(std::string& cmd){
         database_path = database_root + "/" + database_name + "/";
         catlg_man = new catalog_manager();
         connected_to_a_database = true;
+        std::cout<<"connected to database "<<database_name<<std::endl;
     }else if (prefix == "\\d"){
         /*--first check whether connected to a database or not*/
         if(!connected_to_a_database){
