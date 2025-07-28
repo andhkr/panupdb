@@ -18,7 +18,7 @@ batch project_op::project(batch&& tbl_batch){
         }
         projected_tbl.push_back(projected_row);
     }
-
+    
     return projected_tbl;
 }
 
@@ -45,8 +45,16 @@ batch selection_op::select(batch&& tbl_batch){
 
     for(auto& r:tbl_batch){
         
-        if(!predicate || predicate->evaluate(r,tbl)){
+        if(!predicate){
             filtered_row.push_back(r);
+        }
+        else if(predicate->evaluate(r,tbl)){
+            filtered_row.push_back(r);
+        }else {
+            for(datatype*& data:r ){
+                delete data;
+                data = nullptr;
+            }
         }
     }
 

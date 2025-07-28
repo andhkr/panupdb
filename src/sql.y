@@ -84,14 +84,14 @@ query
         ;
 
 sql_statement
-    : select_statement ';'{$1->print_select();query_executor.process_select_stmt($1);}
-    | insert_statement ';' {$1->print_insert();query_executor.process_insert_stmt($1);}
-    | update_statement ';' {((update*)$1)->print_update();}  
-    | delete_statement  ';' {((Delete*)$1)->print_delete();}
-    | create_statement ';' {$1->print_table();query_executor.process_create_table($1);}
+    : select_statement ';'{$1->print_ast(0);query_executor.process_select_stmt($1);}
+    | insert_statement ';' {$1->print_ast(0);query_executor.process_insert_stmt($1);}
+    | update_statement ';' {$1->print_ast(0);}  
+    | delete_statement  ';' {$1->print_ast(0);}
+    | create_statement ';' {$1->print_ast(0);query_executor.process_create_table($1);}
     | drop_table ';' {$1->print_ast(0);}
-    | create_database ';' {((create_database*)$1)->print_db();}
-    | drop_database ';' {((drop_database*)$1)->print_drop();} 
+    | create_database ';' {$1->print_ast(0);}
+    | drop_database ';' {$1->print_ast(0);} 
     ;
 
 select_statement

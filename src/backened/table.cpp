@@ -9,6 +9,20 @@ table_column::table_column(column_definition* obj){
     constraints = obj->constraints.release();
 }
 
+table_column::~table_column(){
+    if(type) delete type;
+    column_constraints*  curr = constraints;
+    column_constraints* prev = nullptr;
+    while(curr){
+        prev = curr;
+        curr = curr->next_constraint;
+        delete prev;
+    }
+    constraints = nullptr;
+    curr = nullptr;
+    prev = nullptr;
+}
+
 size_t table_column::serialise(char* buffer){
     /*to set the default and nullable*/
     size_t total_obj_size = get_total_sizeof_object(); 
@@ -28,9 +42,6 @@ size_t table_column::serialise(char* buffer){
     write(&nullable,sizeof(nullable));
 
     write(&has_default,sizeof(bool));
-    if(has_default){
-        offset += dflt_value->serialise(buffer+offset);
-    }
 
     write(&total_constraints,sizeof(total_constraints));
     column_constraints* curr = constraints;
@@ -68,11 +79,6 @@ size_t table_column::deserialise(const char* buffer){
     read(&nullable,sizeof(nullable));
     read(&has_default,sizeof(bool));
 
-    if(has_default){
-        dflt_value = get_polymorphic_obj(buffer+offset);
-        offset += dflt_value->get_total_object_size();
-    }
-
     read(&total_constraints,sizeof(uint));
     column_constraints* curr = constraints;
     
@@ -85,6 +91,9 @@ size_t table_column::deserialise(const char* buffer){
             curr->next_constraint = get_polymorphic_constraints(buffer+offset);
             offset += curr->next_constraint->get_total_sizeof_object();
             curr = curr->next_constraint;
+        }
+        if(curr->constrt_type() == DEFAULT_VALUE){
+            dflt_value = static_cast<default_value*>(curr)->value;
         }
     }
 
@@ -110,7 +119,6 @@ size_t table_column::get_total_sizeof_object(){
         else if(curr->constrt_type()==DEFAULT_VALUE){
             has_default = true;
             dflt_value = static_cast<default_value*>(curr)->value;
-            total+= dflt_value->get_total_object_size();
         }
         total+= curr->get_total_sizeof_object();
         curr = curr->next_constraint;
@@ -129,7 +137,29 @@ void table_column::check_constraints(datatype* col_value,table* tbl){
     }
 }
 
+table::~table(){
+    /*stored tuples deletion*/
+    for(auto& tpl:tuples){
+        for(auto& data:tpl){
+            delete data;
+            data = nullptr;
+        }
+    }
+    /*table_specific constraints*/
+    for(auto& tbl_ct:on_table_constraints){
+        if(tbl_ct){
+            delete tbl_ct;
+        }
+    }
+    /*delete table column*/
+    for(auto& clmn:columns){
+        if(clmn){
+            delete clmn;
+            clmn = nullptr;
+        }
+    }
 
+}
 #include <iomanip>  // for std::setw
 
 void table::print() {

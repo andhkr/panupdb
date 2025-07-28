@@ -17,6 +17,7 @@ constexpr int MAX_BATCH_SIZE = 2; /*--> how many page at once*/
 
 struct physical_op{
     std::vector<std::unique_ptr<physical_op>> children;
+    virtual ~physical_op()=default;
     virtual bool next(std::future<batch>& result_hndl) = 0;
 };
 

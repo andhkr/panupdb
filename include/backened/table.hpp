@@ -34,6 +34,8 @@ struct table_column{
 
     table_column(column_definition* obj);
 
+    ~table_column();
+    
     size_t serialise(char* buffer);
 
     size_t deserialise(const char* buffer);
@@ -55,6 +57,7 @@ struct table{
     /*small size table data*/
     std::vector<std::vector<datatype*>> tuples;
     
+    ~table();
     void print();
 
     table_column* get_column_by_name(std::string&);

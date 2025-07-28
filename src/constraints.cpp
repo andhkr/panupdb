@@ -45,6 +45,13 @@ size_t primary_key::get_total_sizeof_object(){
     return sizeof(type);
 }
 
+void primary_key::print_constraints(int ind){
+    while(ind--){
+        std::cout<<" ";
+    }
+    std::cout<<"|-"<<get_constrt_name()<<std::endl;
+}
+
 constraint_type not_null::constrt_type(){
     return NOT_NULL;
 }
@@ -78,7 +85,18 @@ size_t not_null::get_total_sizeof_object(){
     return sizeof(type);
 }
 
+void not_null::print_constraints(int ind){
+    while(ind--){
+        std::cout<<" ";
+    }
+    std::cout<<"|-"<<get_constrt_name()<<std::endl;
+}
+
 default_value::default_value(datatype* value):value(value){}
+
+default_value::~default_value(){
+    delete value;
+}
 
 constraint_type default_value::constrt_type(){
     return DEFAULT_VALUE;
@@ -110,6 +128,15 @@ size_t default_value::deserialise(const char* buffer){
 
 size_t default_value::get_total_sizeof_object(){
     return sizeof(type)+value->get_total_object_size();
+}
+
+void default_value::print_constraints(int ind){
+    int i = ind;
+    while(ind--){
+        std::cout<<" ";
+    }
+    std::cout<<"|-"<<get_constrt_name()<<std::endl;
+    print_value(value,i+1);
 }
 
 column_constraints* get_polymorphic_constraints(const char* buffer){

@@ -3,8 +3,8 @@
 
 #include <iostream>
 #include <string>
-#include "include/ast.hpp"
-#include "build/sql.tab.hpp"  // Bison-generated header
+#include "ast.hpp"
+#include "sql.tab.hpp"  // Bison-generated header
 #include <algorithm>
 #include <unordered_map>
 #include "backened/catalog_manager.hpp"

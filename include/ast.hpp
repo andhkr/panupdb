@@ -32,8 +32,8 @@ struct AST{
     // // AST(std::string id_name,AST* ptr_children);
     // AST(std::string id_name,AST* ptr_children,AST* ptr_sibling);
     // // AST(std::string id_name,AST* ptr_sibling);
-    ~AST();
-    void print_ast(int identation);
+    virtual ~AST()=default;
+    virtual void print_ast(int identation);
 };
 
 /*condition can be where clause or join condition*/
@@ -83,7 +83,7 @@ struct select_node:public AST{
     std::unique_ptr<AST> select_list = nullptr;
     std::unique_ptr<from_clause> table_reference_list = nullptr;
     std::unique_ptr<condition> where_clause = nullptr;
-    void print_select();
+    void print_ast(int) override;
 };
 
 struct column_definition:public AST{
@@ -91,7 +91,7 @@ struct column_definition:public AST{
     std::unique_ptr<datatype> Type;
     std::unique_ptr<column_constraints> constraints;
 
-    void print_column_def(int identation);
+    void print_ast (int identation) override;
 };
 
 struct create_table:public AST{
@@ -101,7 +101,7 @@ struct create_table:public AST{
     /*phase 2:*/
     std::unique_ptr<AST> explicit_constraints_on_table;
 
-    void print_table();
+    void print_ast(int) override;
 };
 
 struct insert_stmt:public AST{
@@ -109,33 +109,33 @@ struct insert_stmt:public AST{
     AST* columns_to_insert;
     AST* values;
 
-    void print_insert();
+    void print_ast(int) override;
 };
 
 struct update : public AST{
     std::unique_ptr<AST> table_name;
     AST* update_list;
     std::unique_ptr<condition> where_clause = nullptr;
-    void print_update();
+    void print_ast(int) override;
 };
 
 struct Delete : public AST{
     std::unique_ptr<AST> table_name;
     std::unique_ptr<condition> where_clause = nullptr;
-    void print_delete();
+    void print_ast(int) override;
 };
 
 struct create_database: AST{
     std::string database_name;
     create_database(std::string name);
-    void print_db();
+    void print_ast(int);
     void createdb();
 };
 
 struct drop_database: AST{
     std::string database_name;
     drop_database(std::string name);
-    void print_drop();
+    void print_ast(int);
     void dropdb();
 };
 

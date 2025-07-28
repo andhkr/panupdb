@@ -32,6 +32,11 @@ void databases_loading(){
             databases_created.insert(std::string(entry->d_name));
         }
     }
+
+    if (dirp != nullptr) {
+        closedir(dirp); 
+    }
+
 }
 
 /*

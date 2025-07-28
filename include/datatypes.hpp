@@ -106,8 +106,8 @@ public:
     static std::unique_ptr<datatype> create_varchar(size_t maxlen);
 };
 
+void print_value(datatype* value,int ind);
 
 datatype* get_polymorphic_obj(const char* buffer);
-
 
 #endif

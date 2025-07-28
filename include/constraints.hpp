@@ -32,6 +32,8 @@ struct column_constraints{
 
     virtual size_t get_total_sizeof_object()=0;
 
+    virtual void print_constraints(int)=0;
+
 };
 
 struct primary_key : public column_constraints{
@@ -47,6 +49,8 @@ struct primary_key : public column_constraints{
     size_t deserialise(const char* buffer);
 
     size_t get_total_sizeof_object();
+
+    void print_constraints(int) override;
 };
 
 // struct unique : public column_constraints{
@@ -76,6 +80,8 @@ struct not_null : public column_constraints {
     size_t deserialise(const char* buffer);
 
     size_t get_total_sizeof_object();
+
+    void print_constraints(int) override;
 };
 
 struct default_value : public column_constraints {
@@ -84,6 +90,8 @@ struct default_value : public column_constraints {
 
     default_value()=default;
     default_value(datatype*);
+
+    ~default_value();
 
     constraint_type constrt_type();
 
@@ -96,6 +104,8 @@ struct default_value : public column_constraints {
     size_t deserialise(const char* buffer);
 
     size_t get_total_sizeof_object();
+
+    void print_constraints(int) override;
 };
 
 column_constraints* get_polymorphic_constraints(const char* buffer);

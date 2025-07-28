@@ -114,8 +114,19 @@ catalog_manager::~catalog_manager(){
     write_FSM_files();
     buffer_pool_manager.flush_all_pages();
     free(buffer_pool_manager.cache_buffer);
+    /*clear catalogs of current databases*/
+    for(auto& str_tbl:catalog_file_list){
+        delete str_tbl.second;
+    }
+    catalog_file_list.clear();
+    for(auto& str_index:index_file_root_list){
+        delete str_index.second;
+    }
+    index_file_root_list.clear();
+    /*clear for other database*/
     file_id_filename_lookup.clear();
     database_path.clear();
+    
 }
 
 void catalog_manager::load_file_lookup() {

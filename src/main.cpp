@@ -11,6 +11,8 @@ int main(int argc, char** argv) {
         std::cout << "induman@panupdb$ ";
         read_and_execute_command();
     }
-    
+    // int* leak = new int[10];
+    // leak[0] = 123;  // Use it to prevent optimization
+
     return 0;
 }

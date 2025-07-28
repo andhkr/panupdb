@@ -124,3 +124,25 @@ datatype* get_polymorphic_obj(const char* buffer){
     poly_obj->deserialise(buffer);
     return poly_obj;
 }
+
+void print_integer(datatype* value,int indentation){
+    while(indentation--)std::cout<<" ";
+    std::cout<<"|- "<<static_cast<inttype*>(value)->value<<std::endl;
+}
+
+void print_string(datatype* value,int indentation){
+    while(indentation--)std::cout<<" ";
+    std::cout<<"|- "<<static_cast<varchar*>(value)->value<<std::endl;
+}
+
+void type_error(){
+    (std::cout<<"Type not declared yet"<<std::endl);
+}
+
+/*print datatype value at given identation*/
+void print_value(datatype* value,int ind){
+    type d_type = value->get_type();
+    return (d_type == INT)? print_integer(value,ind)
+    :(d_type == VARCHAR)?print_string(value,ind)
+    :type_error();
+}

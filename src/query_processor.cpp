@@ -120,6 +120,7 @@ try{
     for(auto& print_future:print_val_future){
         print_future.get();
     }
+    // delete obj;
 }catch (const semantic_error& e ){
     std::cout<<e.what()<<std::endl;
 }
@@ -142,6 +143,8 @@ void print_val(std::future<batch>&& res){
                     break;
                 }
             }
+            delete v;
+            v = nullptr;
         }
         ss<<std::endl;
     }

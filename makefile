@@ -1,5 +1,9 @@
+# Sanitizer flags
+# SANITIZER_FLAGS = -fsanitize=address -fsanitize=leak -fno-omit-frame-pointer
+# LDFLAGS = $(SANITIZER_FLAGS)
 CXX = g++
 CXXFLAGS = -std=c++17 -Wall -I. -I$(BUILD_DIR) -g
+CXXFLAGS += $(SANITIZER_FLAGS)
 LEX = flex
 YACC = bison
 YFLAGS = -d -v -Wcounterexamples
@@ -42,10 +46,11 @@ all: $(BIN_DIR)/$(TARGET)
 
 # Link object files to create executable
 $(BIN_DIR)/$(TARGET): $(OBJECTS) $(GENERATED_OBJECTS)
-	$(CXX) $(CXXFLAGS) -o $@ $^
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $^
 
-# Compile main.cpp (depends on generated parser header)
-$(BUILD_DIR)/main.o: $(SRC_DIR)/main.cpp $(PARSER_HPP)
+
+
+$(BUILD_DIR)/command_traffic_police.o: $(SRC_DIR)/command_traffic_police.cpp $(PARSER_HPP)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Compile source files from src directory
